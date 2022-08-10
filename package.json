@@ -7,9 +7,14 @@
   "license": "BSD-3-Clause",
   "repository": "github:geoblocks/mapfishprint",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src/"
   },
   "peerDependencies": {
     "ol": "6.x"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.10",
+    "@typescript-eslint/eslint-plugin": "^5.33.0",
+    "eslint": "^8.21.0"
   }
 }

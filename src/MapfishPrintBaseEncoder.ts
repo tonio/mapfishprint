@@ -2,25 +2,28 @@
  * @module app.print.Service
  */
 import {getWmtsMatrices} from './mapfishprintUtils';
-import olLayerGroup from 'ol/layer/Group.js';
-import olLayerTile from 'ol/layer/Tile.js';
-import olSourceWMTS from 'ol/source/WMTS.js';
-import {create as createTransform, compose as composeTransform, Transform} from 'ol/transform.js';
-import {Extent, getCenter as getExtentCenter} from 'ol/extent.js';
-import {transform2D} from 'ol/geom/flat/transform.js';
+import olLayerGroup from 'ol/layer/Group';
+import olLayerTile from 'ol/layer/Tile';
+import olSourceWMTS from 'ol/source/WMTS';
+import type {Transform} from 'ol/transform';
+import {create as createTransform, compose as composeTransform} from 'ol/transform';
+import type {Extent} from 'ol/extent';
+import {getCenter as getExtentCenter} from 'ol/extent';
+import {transform2D} from 'ol/geom/flat/transform';
 
 import type BaseCustomizer from './BaseCustomizer';
 import type Map from 'ol/Map';
-import {MapFishPrintLayer, MapFishPrintMap, MapFishPrintAttributes, MapFishPrintSpec} from './mapfishprintTypes';
-import BaseLayer from 'ol/layer/Base';
-import VectorLayer from 'ol/layer/Vector.js';
-import VectorSource from 'ol/source/Vector';
-import Layer from 'ol/layer/Layer';
-import WMTS from 'ol/source/WMTS.js';
-import TileLayer from 'ol/layer/Tile.js';
-import {Feature} from 'ol';
-import {StyleFunction} from 'ol/style/Style';
-import VectorContext from 'ol/render/VectorContext';
+import type {MapFishPrintLayer, MapFishPrintMap, MapFishPrintSpec, MapFishPrintWmtsLayer} from './mapfishprintTypes';
+import type BaseLayer from 'ol/layer/Base';
+import type VectorLayer from 'ol/layer/Vector';
+import type VectorSource from 'ol/source/Vector';
+import type Layer from 'ol/layer/Layer';
+import type WMTS from 'ol/source/WMTS';
+import type TileLayer from 'ol/layer/Tile';
+import type {Feature} from 'ol';
+import type {StyleFunction} from 'ol/style/Style';
+import type VectorContext from 'ol/render/VectorContext';
+import type { Geometry } from 'ol/geom';
 
 
 const getAbsoluteUrl_ = (url: string): string => {
@@ -65,20 +68,18 @@ export default abstract class MapfishPrintBaseEncoder {
     this.url_ = printUrl;
   }
 
-  async createSpec(map: Map, scale: number, printResolution: number, dpi: number, layout: string, format: string, customAttributes: Object, customizer: BaseCustomizer): Promise<MapFishPrintSpec> {
+  async createSpec(map: Map, scale: number, printResolution: number, dpi: number, layout: string, format: string, customAttributes: Record<string, any>, customizer: BaseCustomizer): Promise<MapFishPrintSpec> {
     const mapSpec = await this.encodeMap(map, scale, printResolution, dpi, customizer);
     const attributes = {
       map: mapSpec
-    } as MapFishPrintAttributes;
+    };
     Object.assign(attributes, customAttributes);
 
-    const spec = {
+    return {
       attributes,
       format,
       layout
-    } as MapFishPrintSpec;
-
-    return spec;
+    };
   }
 
 
@@ -92,12 +93,12 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
   const layers: MapFishPrintLayer[] = [];
   for (const layer of flatLayers) {
     console.assert(printResolution !== undefined);
-    let spec = await this.encodeLayer(layer, printResolution, customizer);
+    const spec = await this.encodeLayer(layer, printResolution, customizer);
     if (spec) {
       if (Array.isArray(spec)) {
         layers.push(...spec);
       } else {
-        layers.push(spec)
+        layers.push(spec);
       }
     }
   }
@@ -136,7 +137,7 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
   }
 
 
-  encodeTileWmtsLayer(layer: TileLayer<WMTS>, customizer: BaseCustomizer): MapFishPrintLayer {
+  encodeTileWmtsLayer(layer: TileLayer<WMTS>, customizer: BaseCustomizer): MapFishPrintWmtsLayer {
     console.assert(layer instanceof olLayerTile);
     const source = layer.getSource()!;
     console.assert(source instanceof olSourceWMTS);
@@ -144,27 +145,28 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
     const dimensionParams = source.getDimensions();
     const dimensions = Object.keys(dimensionParams);
 
-    const wmtsLayer = /** @type {MapFishPrintWmtsLayer} */ ({
+    // FIXME: remove "as 'wmts'"
+    const wmtsLayer = {
+      type: 'wmts' as 'wmts',
       baseURL: getWmtsUrl_(source),
       dimensions,
       dimensionParams,
-      name: layer.get('name'),
       imageFormat: source.getFormat(),
+      name: layer.get('name'),
       layer: source.getLayer(),
       matrices: getWmtsMatrices(source),
       matrixSet: source.getMatrixSet(),
       opacity: layer.getOpacity(),
       requestEncoding: source.getRequestEncoding(),
       style: source.getStyle(),
-      type: 'WMTS',
       version: source.getVersion()
-    });
+    };
     customizer.wmtsLayer(layer, wmtsLayer, source);
     return wmtsLayer;
   }
 
 
-  drawFeaturesToContext(features: Feature[], styleFunction: StyleFunction | undefined, resolution: number, coordinateToPixelTransform: Transform , vectorContext: VectorContext, additionnalDraw): void {
+  drawFeaturesToContext(features: Feature[], styleFunction: StyleFunction | undefined, resolution: number, coordinateToPixelTransform: Transform, vectorContext: VectorContext, additionalDraw: (geometry: Geometry) => void): void {
     if (!styleFunction) {
       return;
     }
@@ -188,7 +190,7 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
           vectorContext.setStyle(styles);
           vectorContext.drawGeometry(geometry);
         }
-        additionnalDraw(geometry);
+        additionalDraw(geometry);
       }
     });
   }
