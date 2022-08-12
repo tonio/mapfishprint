@@ -6,6 +6,7 @@
   },
   "license": "BSD-3-Clause",
   "repository": "github:geoblocks/mapfishprint",
+  "files": ["src/*.ts"],
   "scripts": {
     "lint": "eslint src/"
   },
