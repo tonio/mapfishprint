@@ -93,7 +93,7 @@ export default class VectorEncoder {
     features.forEach((feature) => {
       let styleData = null;
       const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
-      if (!styleFunction) {
+      if (styleFunction) {
         styleData = styleFunction.call(null, feature, resolution) as null | Style | Style[];
       }
       const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
