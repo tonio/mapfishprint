@@ -13,7 +13,7 @@ import {transform2D} from 'ol/geom/flat/transform';
 
 import type BaseCustomizer from './BaseCustomizer';
 import type Map from 'ol/Map';
-import type {MapFishPrintLayer, MapFishPrintMap, MapFishPrintSpec, MapFishPrintWmtsLayer} from './mapfishprintTypes';
+import type {MapFishPrintLayer, MapFishPrintMap, MapFishPrintReportResponse, MapFishPrintSpec, MapFishPrintStatusResponse, MapFishPrintWmtsLayer} from './mapfishprintTypes';
 import type BaseLayer from 'ol/layer/Base';
 import type VectorLayer from 'ol/layer/Vector';
 import type VectorSource from 'ol/source/Vector';
@@ -23,7 +23,7 @@ import type TileLayer from 'ol/layer/Tile';
 import type {Feature} from 'ol';
 import type {StyleFunction} from 'ol/style/Style';
 import type VectorContext from 'ol/render/VectorContext';
-import type { Geometry } from 'ol/geom';
+import type {Geometry} from 'ol/geom';
 
 
 const getAbsoluteUrl_ = (url: string): string => {
@@ -55,8 +55,7 @@ const getWmtsUrl_ = (source: WMTS): string => {
 };
 
 export default abstract class MapfishPrintBaseEncoder {
-  scratchCanvas_: HTMLCanvasElement;
-  url_: string;
+  readonly url: string;
 
   /**
    * Provides a function to create app.print.Service objects used to
@@ -64,8 +63,7 @@ export default abstract class MapfishPrintBaseEncoder {
    *
    */
   constructor(printUrl: string) {
-    this.scratchCanvas_ = document.createElement('canvas');
-    this.url_ = printUrl;
+    this.url = printUrl;
   }
 
   async createSpec(map: Map, scale: number, printResolution: number, dpi: number, layout: string, format: string, customAttributes: Record<string, any>, customizer: BaseCustomizer): Promise<MapFishPrintSpec> {
@@ -82,31 +80,48 @@ export default abstract class MapfishPrintBaseEncoder {
     };
   }
 
+  async getStatus(ref: string): Promise<MapFishPrintStatusResponse> {
+    return await (await fetch(`${this.url}/status/${ref}.json`)).json();
+  }
 
-async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer): Promise<MapFishPrintLayer[]> {
-  const mapLayerGroup = map.getLayerGroup();
-  console.assert(!!mapLayerGroup);
-  const flatLayers = this.getFlatLayers_(mapLayerGroup)
-    .filter(customizer.layerFilter)
-    .sort((layer, nextLayer) => nextLayer.getZIndex() - layer.getZIndex());
+  // FIXME: add timeout
+  // FIXME: handle errors
+  getDownloadUrl(response: MapFishPrintReportResponse, interval = 1000): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const intervalId = setInterval(async () => {
+        const status = await this.getStatus(response.ref);
+        if (status.done) {
+          clearInterval(intervalId);
+          resolve(`${this.url}/report/${response.ref}`);
+        }
+      }, interval);
+    });
+  }
 
-  const layers: MapFishPrintLayer[] = [];
-  for (const layer of flatLayers) {
-    console.assert(printResolution !== undefined);
-    const spec = await this.encodeLayer(layer, printResolution, customizer);
-    if (spec) {
-      if (Array.isArray(spec)) {
-        layers.push(...spec);
-      } else {
-        layers.push(spec);
+  async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer): Promise<MapFishPrintLayer[]> {
+    const mapLayerGroup = map.getLayerGroup();
+    console.assert(!!mapLayerGroup);
+    const flatLayers = this.getFlatLayers_(mapLayerGroup)
+      .filter(customizer.layerFilter)
+      .sort((layer, nextLayer) => nextLayer.getZIndex() - layer.getZIndex());
+
+    const layers: MapFishPrintLayer[] = [];
+    for (const layer of flatLayers) {
+      console.assert(printResolution !== undefined);
+      const spec = await this.encodeLayer(layer, printResolution, customizer);
+      if (spec) {
+        if (Array.isArray(spec)) {
+          layers.push(...spec);
+        } else {
+          layers.push(spec);
+        }
       }
     }
+    return layers;
   }
-  return layers;
-}
 
   abstract encodeMap(map: Map, scale: number, printResolution: number, dpi: number, customizer: BaseCustomizer): Promise<MapFishPrintMap>;
-  abstract encodeLayer(layer: BaseLayer, printResolution: number, customizer: BaseCustomizer): Promise<MapFishPrintLayer[]| MapFishPrintLayer | null>;
+  abstract encodeLayer(layer: BaseLayer, printResolution: number, customizer: BaseCustomizer): Promise<MapFishPrintLayer[] | MapFishPrintLayer | null>;
 
   /**
    * Get an array of all layers in a group. The group can contain multiple levels
@@ -136,7 +151,6 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
     }
   }
 
-
   encodeTileWmtsLayer(layer: TileLayer<WMTS>, customizer: BaseCustomizer): MapFishPrintWmtsLayer {
     console.assert(layer instanceof olLayerTile);
     const source = layer.getSource()!;
@@ -145,9 +159,9 @@ async mapToLayers(map: Map, printResolution: number, customizer: BaseCustomizer)
     const dimensionParams = source.getDimensions();
     const dimensions = Object.keys(dimensionParams);
 
-    // FIXME: remove "as 'wmts'"
+    // FIXME: remove "as const"
     const wmtsLayer = {
-      type: 'wmts' as 'wmts',
+      type: 'wmts' as const,
       baseURL: getWmtsUrl_(source),
       dimensions,
       dimensionParams,

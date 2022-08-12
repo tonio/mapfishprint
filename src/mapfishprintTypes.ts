@@ -118,3 +118,17 @@ export interface MapFishPrintSpec {
   format: string
   smtp?: Record<string, string>
 }
+
+export interface MapFishPrintReportResponse {
+  ref: string
+  statusURL: string
+  downloadURL: string
+}
+
+export interface MapFishPrintStatusResponse {
+  done: boolean
+  downloadURL: string
+  elapsedTime: number
+  status: string
+  waitingTime: number
+}
