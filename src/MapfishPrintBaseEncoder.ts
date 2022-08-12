@@ -84,6 +84,17 @@ export default abstract class MapfishPrintBaseEncoder {
     return await (await fetch(`${this.url}/status/${ref}.json`)).json();
   }
 
+  async requestReport(spec: MapFishPrintSpec): Promise<MapFishPrintReportResponse> {
+    const report = await fetch(`${this.url}/report.${spec.format}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(spec)
+    });
+    return await report.json();
+  }
+
   // FIXME: add timeout
   // FIXME: handle errors
   getDownloadUrl(response: MapFishPrintReportResponse, interval = 1000): Promise<string> {
