@@ -1,12 +1,14 @@
 {
   "name": "@geoblocks/mapfishprint",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publishConfig": {
     "access": "public"
   },
   "license": "BSD-3-Clause",
   "repository": "github:geoblocks/mapfishprint",
-  "files": ["src/*.ts"],
+  "files": [
+    "src/*.ts"
+  ],
   "scripts": {
     "lint": "eslint src/"
   },
