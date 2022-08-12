@@ -3,17 +3,17 @@
  */
 import {rgbArrayToHex} from './mapfishprintUtils';
 import {GeoJSON as olFormatGeoJSON} from 'ol/format';
-import {Circle as olStyleCircle, Fill, Icon, Icon as olStyleIcon, Image, Stroke, Style, Text} from 'ol/style';
-import olStyleIconAnchorUnits from 'ol/style/IconAnchorUnits.js';
-import olStyleIconOrigin from 'ol/style/IconOrigin.js';
-import {getUid} from "ol";
-import {asArray} from "ol/color";
-import {toDegrees} from "ol/math.js";
-import VectorLayer from 'ol/layer/Vector';
+import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style';
+import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style';
+import olStyleIconAnchorUnits from 'ol/style/IconAnchorUnits';
+import olStyleIconOrigin from 'ol/style/IconOrigin';
+import {getUid} from 'ol';
+import {asArray} from 'ol/color';
+import {toDegrees} from 'ol/math';
 import VectorSource from 'ol/source/Vector';
-import BaseCustomizer from './BaseCustomizer';
-import {GeoJSONFeature} from 'ol/format/GeoJSON';
-import {MapFishPrintLayer, MapFishPrintSymbolizer, MapFishPrintSymbolizers, MapFishPrintVectorStyle} from './mapfishprintTypes';
+import type VectorLayer from 'ol/layer/Vector';
+import type BaseCustomizer from './BaseCustomizer';
+import type {MapFishPrintSymbolizer, MapFishPrintSymbolizerLine, MapFishPrintSymbolizerPoint, MapFishPrintSymbolizerPolygon, MapFishPrintSymbolizers, MapFishPrintSymbolizerText, MapFishPrintVectorLayer, MapFishPrintVectorStyle} from './mapfishprintTypes';
 
 
 export const PrintStyleType = {
@@ -38,7 +38,7 @@ export const PrintStyleTypes_ = {
 const FEATURE_STYLE_PROP = '_ngeo_style';
 
 
-const featureTypePriority_ = (feature: GeoJSONFeature): number => {
+const featureTypePriority_ = (feature: GeoJSON.Feature): number => {
   const geometry = feature.geometry;
   if (geometry && geometry.type === 'Point') {
     return 0;
@@ -55,13 +55,13 @@ const styleKey = (styles: string|string[]): string => {
 
 
 export default class VectorEncoder {
-  private layer_: VectorLayer<VectorSource>
-  private customizer_: BaseCustomizer
+  private layer_: VectorLayer<VectorSource>;
+  private customizer_: BaseCustomizer;
   private geojsonFormat = new olFormatGeoJSON();
   private deepIds_: Map<string, number> = new Map();
   private lastDeepId_ = 0;
 
-  constructor(layer: VectorLayer<VectorSource>, customizer) {
+  constructor(layer: VectorLayer<VectorSource>, customizer: BaseCustomizer) {
 
     /**
      * @private
@@ -76,7 +76,7 @@ export default class VectorEncoder {
   }
 
 
-  encodeVectorLayer(resolution: number): MapFishPrintLayer | null{
+  encodeVectorLayer(resolution: number): MapFishPrintVectorLayer | null {
     const source = this.layer_.getSource();
     if (!source) {
       return null; // skipping
@@ -85,26 +85,20 @@ export default class VectorEncoder {
 
     const features = source.getFeaturesInExtent(this.customizer_.printExtent);
 
-    const geojsonFeatures: GeoJSONFeature[] = [];
+    const geojsonFeatures: GeoJSON.Feature[] = [];
     const mapfishStyleObject: MapFishPrintVectorStyle = {
       version: 2
     };
 
     features.forEach((feature) => {
-      let styleData: null | Style | Style[] = null;
-      let styleFunction = feature.getStyleFunction();
-      if (styleFunction !== undefined) {
-        // fixme: some functions expect feature as this but on map render feature sends as first param
-        styleData = styleFunction.call(feature, feature, resolution, true);
-      } else {
-        styleFunction = this.layer_.getStyleFunction();
-        if (styleFunction !== undefined) {
-          styleData = styleFunction.call(this.layer_, feature, resolution);
-        }
+      let styleData = null;
+      const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
+      if (!styleFunction) {
+        styleData = styleFunction.call(null, feature, resolution) as null | Style | Style[];
       }
       const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
 
-      let styles: null | Style[] = (styleData !== null && !Array.isArray(styleData)) ? [styleData] : styleData;
+      let styles = (styleData !== null && !Array.isArray(styleData)) ? [styleData] : styleData as Style[];
       if (!styles) {
         return;
       }
@@ -160,17 +154,17 @@ export default class VectorEncoder {
         return priority(feature1) - priority(feature0);
       });
 
-      const geojsonFeatureCollection = /** @type {GeoJSONFeatureCollection} */ ({
+      const geojsonFeatureCollection = {
         type: 'FeatureCollection',
         features: geojsonFeatures
-      });
+      } as GeoJSON.FeatureCollection;
       return {
         geoJson: geojsonFeatureCollection,
         opacity: this.layer_.getOpacity(),
         style: mapfishStyleObject,
         type: 'geojson',
         name: this.layer_.get('name')
-      } as MapFishPrintLayer;
+      };
     } else {
       return null;
     }
@@ -184,6 +178,7 @@ export default class VectorEncoder {
       key += '_k' + getUid(obj);
       for (const k in obj) {
         if (obj.hasOwnProperty(k)) {
+          // @ts-ignore
           const value = obj[k];
           if (value !== null && value !== undefined) {
             if (['number', 'string', 'boolean'].includes(typeof value)) {
@@ -195,15 +190,17 @@ export default class VectorEncoder {
         }
       }
     }
-    let uid = this.deepIds_[key];
-    if (!uid) {
-      uid = this.deepIds_[key] = ++this.lastDeepId_;
+    if (this.deepIds_.has(key)) {
+      return this.deepIds_.get(key).toString();
+    } else {
+      const uid = ++this.lastDeepId_;
+      this.deepIds_.set(key, uid);
+      return uid.toString();
     }
-    return uid.toString();
   }
 
 
-  addVectorStyle(mapfishStyleObject: MapFishPrintVectorStyle, geojsonFeature: GeoJSONFeature, geometryType: GeometryType, style: Style) {
+  addVectorStyle(mapfishStyleObject: MapFishPrintVectorStyle, geojsonFeature: GeoJSON.Feature, geometryType: GeometryType, style: Style) {
     const styleId = this.getDeepStyleUid(style);
     const key = styleKey(styleId);
     let hasSymbolizer;
@@ -214,6 +211,7 @@ export default class VectorEncoder {
       const styleObject = this.encodeVectorStyle(geometryType, style);
       hasSymbolizer = (styleObject && styleObject.symbolizers.length !== 0);
       if (hasSymbolizer) {
+        // @ts-ignore
         mapfishStyleObject[key] = styleObject;
       }
     }
@@ -227,9 +225,12 @@ export default class VectorEncoder {
       if (existingStylesIds) {
         // multiple styles: merge symbolizers
         const styleIds = [...existingStylesIds.split(','), styleId];
+        // @ts-ignore
         mapfishStyleObject[styleKey(styleIds)] = {
           symbolizers: [
+            // @ts-ignore
             ...mapfishStyleObject[styleKey(existingStylesIds)].symbolizers,
+            // @ts-ignore
             ...mapfishStyleObject[key].symbolizers,
           ]
         };
@@ -275,7 +276,7 @@ export default class VectorEncoder {
   }
 
 
-  protected encodeVectorStyleFill(symbolizer, fillStyle: Fill) {
+  protected encodeVectorStyleFill(symbolizer: MapFishPrintSymbolizerPoint | MapFishPrintSymbolizerPolygon | MapFishPrintSymbolizerText, fillStyle: Fill) {
     let fillColor = fillStyle.getColor();
     if (fillColor !== null) {
       console.assert(typeof fillColor === 'string' || Array.isArray(fillColor));
@@ -289,9 +290,9 @@ export default class VectorEncoder {
 
 
   protected encodeVectorStyleLine(symbolizers: MapFishPrintSymbolizer[], strokeStyle: Stroke) {
-    const symbolizer = /** @type {MapFishPrintSymbolizerLine} */ ({
+    const symbolizer = {
       type: 'line'
-    });
+    } as MapFishPrintSymbolizerLine;
     this.encodeVectorStyleStroke(symbolizer, strokeStyle);
     this.customizer_.line(this.layer_, symbolizer, strokeStyle);
     symbolizers.push(symbolizer);
@@ -301,9 +302,9 @@ export default class VectorEncoder {
   protected encodeVectorStylePoint(symbolizers: MapFishPrintSymbolizer[], imageStyle: Image) {
     let symbolizer;
     if (imageStyle instanceof olStyleCircle) {
-      symbolizer = /** @type {MapFishPrintSymbolizerPoint} */ ({
+      symbolizer = {
         type: 'point'
-      });
+      } as MapFishPrintSymbolizerPoint;
       symbolizer.pointRadius = imageStyle.getRadius();
       const scale = imageStyle.getScale();
       if (scale) {
@@ -324,10 +325,10 @@ export default class VectorEncoder {
     } else if (imageStyle instanceof olStyleIcon) {
       const src = imageStyle.getSrc();
       if (src !== undefined) {
-        symbolizer = /** @type {MapFishPrintSymbolizerPoint} */ ({
+        symbolizer = {
           type: 'point',
           externalGraphic: src
-        });
+        } as MapFishPrintSymbolizerPoint;
         const opacity = imageStyle.getOpacity();
         if (opacity !== null) {
           symbolizer.graphicOpacity = opacity;
@@ -336,7 +337,7 @@ export default class VectorEncoder {
         if (size !== null) {
           let scale = imageStyle.getScale();
           if (Array.isArray(scale)) {
-            scale = (scale[0] + scale[1]) / 2
+            scale = (scale[0] + scale[1]) / 2;
           }
           if (isNaN(scale)) {
             scale = 1;
@@ -363,13 +364,13 @@ export default class VectorEncoder {
   }
 
 
-  addGraphicOffset_(symbolizer: Object, icon: Icon, width: number, height: number) {
+  addGraphicOffset_(symbolizer: MapFishPrintSymbolizerPoint, icon: Icon, width: number, height: number) {
     if (!this.hasDefaultAnchor_(icon)) {
       const topLeftOffset = icon.getAnchor();
       const centerXOffset = width / 2 - topLeftOffset[0];
       const centerYOffset = height / 2 - topLeftOffset[1];
-      symbolizer['graphicXOffset'] = centerXOffset;
-      symbolizer['graphicYOffset'] = centerYOffset;
+      symbolizer.graphicXOffset = centerXOffset;
+      symbolizer.graphicYOffset = centerYOffset;
     }
   }
 
@@ -390,9 +391,9 @@ export default class VectorEncoder {
 
 
   protected encodeVectorStylePolygon(symbolizers: MapFishPrintSymbolizer[], fillStyle: Fill, strokeStyle: Stroke) {
-    const symbolizer = /** @type {MapFishPrintSymbolizerPolygon} */ ({
+    const symbolizer = {
       type: 'polygon'
-    });
+    } as MapFishPrintSymbolizerPolygon;
     this.encodeVectorStyleFill(symbolizer, fillStyle);
     if (strokeStyle !== null) {
       this.encodeVectorStyleStroke(symbolizer, strokeStyle);
@@ -401,7 +402,7 @@ export default class VectorEncoder {
   }
 
 
-  protected encodeVectorStyleStroke(symbolizer: MapFishPrintSymbolizerPoint|MapFishPrintSymbolizerLine|MapFishPrintSymbolizerPolygon, strokeStyle: Stroke) {
+  protected encodeVectorStyleStroke(symbolizer: MapFishPrintSymbolizerPoint | MapFishPrintSymbolizerLine | MapFishPrintSymbolizerPolygon, strokeStyle: Stroke) {
     const strokeColor = strokeStyle.getColor();
     if (strokeColor !== null) {
       console.assert(typeof strokeColor === 'string' || Array.isArray(strokeColor));
@@ -441,7 +442,7 @@ export default class VectorEncoder {
         labelXOffset: textStyle.getOffsetX(),
         labelYOffset: textStyle.getOffsetY(),
         labelAlign: 'cm',
-      } as MapFishPrintSymbolizer;
+      } as MapFishPrintSymbolizerText;
       const fillStyle = textStyle.getFill();
       if (fillStyle !== null) {
         this.encodeVectorStyleFill(symbolizer, fillStyle);

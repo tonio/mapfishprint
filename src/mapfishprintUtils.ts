@@ -1,7 +1,7 @@
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
-import {toSize} from 'ol/size.js';
+import {toSize} from 'ol/size';
 import type {MapFishPrintWmtsMatrix} from './mapfishprintTypes';
-import {WMTS} from 'ol/source';
+import type {WMTS} from 'ol/source';
 
 
 // "Standardized rendering pixel size" is defined as 0.28 mm, see http://www.opengeospatial.org/standards/wmts
@@ -16,7 +16,7 @@ const WMTS_PIXEL_SIZE_ = 0.28E-3;
  *     otherwise the same value that was passed in.
  */
  export function colorZeroPadding(hex: string): string {
-  return hex.length == 1 ? `0${hex}` : hex;
+  return hex.length === 1 ? `0${hex}` : hex;
 }
 
 /**
@@ -29,7 +29,7 @@ export function rgbArrayToHex(rgb: number[]): string {
   const r = rgb[0];
   const g = rgb[1];
   const b = rgb[2];
-  if (r != (r & 255) || g != (g & 255) || b != (b & 255)) {
+  if (r !== (r & 255) || g !== (g & 255) || b !== (b & 255)) {
     throw new Error(`"(${r},${g},${b})" is not a valid RGB color`);
   }
   const hexR = colorZeroPadding(r.toString(16));
@@ -39,7 +39,7 @@ export function rgbArrayToHex(rgb: number[]): string {
 }
 
 
-export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[]{
+export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
   const projection = source.getProjection()!;
   const tileGrid = source.getTileGrid() as WMTSTileGrid;
   console.assert(tileGrid instanceof WMTSTileGrid);
@@ -65,4 +65,4 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[]{
   }
 
   return wmtsMatrices;
-};
+}
