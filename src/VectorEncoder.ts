@@ -5,8 +5,6 @@ import {rgbArrayToHex} from './mapfishprintUtils';
 import {GeoJSON as olFormatGeoJSON} from 'ol/format';
 import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style';
 import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style';
-import olStyleIconAnchorUnits from 'ol/style/IconAnchorUnits';
-import olStyleIconOrigin from 'ol/style/IconOrigin';
 import {getUid} from 'ol';
 import {asArray} from 'ol/color';
 import {toDegrees} from 'ol/math';
@@ -381,11 +379,11 @@ export default class VectorEncoder {
     // @ts-ignore
     const hasDefaultCoordinates = (icon.anchor_[0] === 0.5 && icon.anchor_[1] === 0.5);
     // @ts-ignore
-    const hasDefaultOrigin = (icon.anchorOrigin_ === olStyleIconOrigin.TOP_LEFT);
+    const hasDefaultOrigin = (icon.anchorOrigin_ === 'top-left');
     // @ts-ignore
-    const hasDefaultXUnits = (icon.anchorXUnits_ === olStyleIconAnchorUnits.FRACTION);
+    const hasDefaultXUnits = (icon.anchorXUnits_ === 'fraction');
     // @ts-ignore
-    const hasDefaultYUnits = (icon.anchorYUnits_ === olStyleIconAnchorUnits.FRACTION);
+    const hasDefaultYUnits = (icon.anchorYUnits_ === 'fraction');
     return hasDefaultCoordinates && hasDefaultOrigin && hasDefaultXUnits && hasDefaultYUnits;
   }
 
