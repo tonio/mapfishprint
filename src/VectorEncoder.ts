@@ -172,18 +172,14 @@ export default class VectorEncoder {
     const todo = [style];
     let key = '';
     while (todo.length) {
-      const obj = todo.pop();
+      const obj = todo.pop()!;
       key += '_k' + getUid(obj);
-      for (const k in obj) {
-        if (obj.hasOwnProperty(k)) {
-          // @ts-ignore
-          const value = obj[k];
-          if (value !== null && value !== undefined) {
-            if (['number', 'string', 'boolean'].includes(typeof value)) {
-              key += `_${k}:${value}`;
-            } else {
-              todo.push(value);
-            }
+      for (const [k, value] of Object.entries(obj)) {
+        if (value !== null && value !== undefined) {
+          if (['number', 'string', 'boolean'].includes(typeof value)) {
+            key += `_${k}:${value}`;
+          } else {
+            todo.push(value);
           }
         }
       }
