@@ -114,7 +114,8 @@ export default abstract class MapfishPrintBaseEncoder {
     console.assert(!!mapLayerGroup);
     const flatLayers = this.getFlatLayers_(mapLayerGroup)
       .filter(customizer.layerFilter)
-      .sort((layer, nextLayer) => nextLayer.getZIndex() - layer.getZIndex());
+      .sort((layer, nextLayer) => (layer.getZIndex() || 0) - (nextLayer.getZIndex() || 0))
+      .reverse();
 
     const layers: MapFishPrintLayer[] = [];
     for (const layer of flatLayers) {
