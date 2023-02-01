@@ -12,6 +12,7 @@ import VectorSource from 'ol/source/Vector';
 import type VectorLayer from 'ol/layer/Vector';
 import type BaseCustomizer from './BaseCustomizer';
 import type {MapFishPrintSymbolizer, MapFishPrintSymbolizerLine, MapFishPrintSymbolizerPoint, MapFishPrintSymbolizerPolygon, MapFishPrintSymbolizers, MapFishPrintSymbolizerText, MapFishPrintVectorLayer, MapFishPrintVectorStyle} from './mapfishprintTypes';
+import type {State} from 'ol/layer/Layer';
 
 
 export const PrintStyleType = {
@@ -53,24 +54,17 @@ const styleKey = (styles: string|string[]): string => {
 
 
 export default class VectorEncoder {
+  private layerState_: State;
   private layer_: VectorLayer<VectorSource>;
   private customizer_: BaseCustomizer;
   private geojsonFormat = new olFormatGeoJSON();
   private deepIds_: Map<string, number> = new Map();
   private lastDeepId_ = 0;
 
-  constructor(layer: VectorLayer<VectorSource>, customizer: BaseCustomizer) {
-
-    /**
-     * @private
-     */
-    this.layer_ = layer;
-
-    /**
-     * @private
-     */
+  constructor(layerState: State, customizer: BaseCustomizer) {
+    this.layerState_ = layerState;
+    this.layer_ = this.layerState_.layer as VectorLayer<VectorSource>;
     this.customizer_ = customizer;
-
   }
 
 
@@ -158,7 +152,7 @@ export default class VectorEncoder {
       } as GeoJSON.FeatureCollection;
       return {
         geoJson: geojsonFeatureCollection,
-        opacity: this.layer_.getOpacity(),
+        opacity: this.layerState_.opacity,
         style: mapfishStyleObject,
         type: 'geojson',
         name: this.layer_.get('name')
@@ -185,7 +179,7 @@ export default class VectorEncoder {
       }
     }
     if (this.deepIds_.has(key)) {
-      return this.deepIds_.get(key).toString();
+      return this.deepIds_.get(key)!.toString();
     } else {
       const uid = ++this.lastDeepId_;
       this.deepIds_.set(key, uid);
@@ -214,7 +208,7 @@ export default class VectorEncoder {
       if (!geojsonFeature.properties) {
         geojsonFeature.properties = {};
       }
-      this.customizer_.feature(this.layer_, geojsonFeature);
+      this.customizer_.feature(this.layerState_, geojsonFeature);
       const existingStylesIds = geojsonFeature.properties[FEATURE_STYLE_PROP];
       if (existingStylesIds) {
         // multiple styles: merge symbolizers
@@ -288,7 +282,7 @@ export default class VectorEncoder {
       type: 'line'
     } as MapFishPrintSymbolizerLine;
     this.encodeVectorStyleStroke(symbolizer, strokeStyle);
-    this.customizer_.line(this.layer_, symbolizer, strokeStyle);
+    this.customizer_.line(this.layerState_, symbolizer, strokeStyle);
     symbolizers.push(symbolizer);
   }
 
@@ -352,7 +346,7 @@ export default class VectorEncoder {
       }
     }
     if (symbolizer !== undefined) {
-      this.customizer_.point(this.layer_, symbolizer, imageStyle);
+      this.customizer_.point(this.layerState_, symbolizer, imageStyle);
       symbolizers.push(symbolizer);
     }
   }

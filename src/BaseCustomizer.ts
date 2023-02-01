@@ -1,9 +1,6 @@
 import type {Geometry} from 'ol/geom';
-import type BaseLayer from 'ol/layer/Base';
-import type TileLayer from 'ol/layer/Tile';
-import type VectorLayer from 'ol/layer/Vector';
+import type {State} from 'ol/layer/Layer';
 import type {WMTS} from 'ol/source';
-import type VectorSource from 'ol/source/Vector';
 import type {Image, Stroke} from 'ol/style';
 import type {MapFishPrintSymbolizerLine, MapFishPrintSymbolizerPoint, MapFishPrintWmtsLayer} from './mapfishprintTypes';
 
@@ -15,7 +12,7 @@ export default class {
     this.printExtent = printExtent;
   }
 
-  layerFilter(layer: BaseLayer): boolean {
+  layerFilter(layerState: State): boolean {
     return true;
   }
 
@@ -23,11 +20,11 @@ export default class {
     return true;
   }
 
-  feature(layer: VectorLayer<VectorSource>, feature: GeoJSON.Feature) {}
+  feature(layerState: State, feature: GeoJSON.Feature) {}
 
-  line(layer: VectorLayer<VectorSource>, symbolizer: MapFishPrintSymbolizerLine, stroke: Stroke) {}
+  line(layerState: State, symbolizer: MapFishPrintSymbolizerLine, stroke: Stroke) {}
 
-  point(layer: VectorLayer<VectorSource>, symbolizer: MapFishPrintSymbolizerPoint, image: Image) {}
+  point(layerState: State, symbolizer: MapFishPrintSymbolizerPoint, image: Image) {}
 
-  wmtsLayer(layer: TileLayer<WMTS>, wmtsLayer: MapFishPrintWmtsLayer, source: WMTS) {}
+  wmtsLayer(layerState: State, wmtsLayer: MapFishPrintWmtsLayer, source: WMTS) {}
 }
