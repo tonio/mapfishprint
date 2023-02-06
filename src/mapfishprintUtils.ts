@@ -3,10 +3,8 @@ import {toSize} from 'ol/size';
 import type {MapFishPrintWmtsMatrix} from './mapfishprintTypes';
 import type {WMTS} from 'ol/source';
 
-
 // "Standardized rendering pixel size" is defined as 0.28 mm, see http://www.opengeospatial.org/standards/wmts
-const WMTS_PIXEL_SIZE_ = 0.28E-3;
-
+const WMTS_PIXEL_SIZE_ = 0.28e-3;
 
 /**
  * Takes a hex value and prepends a zero if it's a single digit.
@@ -15,7 +13,7 @@ const WMTS_PIXEL_SIZE_ = 0.28E-3;
  * @returns hex value prepended with zero if it was single digit,
  *     otherwise the same value that was passed in.
  */
- export function colorZeroPadding(hex: string): string {
+export function colorZeroPadding(hex: string): string {
   return hex.length === 1 ? `0${hex}` : hex;
 }
 
@@ -38,7 +36,6 @@ export function rgbArrayToHex(rgb: number[]): string {
   return `#${hexR}${hexG}${hexB}`;
 }
 
-
 export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
   const projection = source.getProjection()!;
   const tileGrid = source.getTileGrid() as WMTSTileGrid;
@@ -59,8 +56,8 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
       topLeftCorner: tileGrid.getOrigin(i),
       matrixSize: [
         tileRange.maxX - tileRange.minX,
-        tileRange.maxY - tileRange.minY
-      ]
+        tileRange.maxY - tileRange.minY,
+      ],
     } as MapFishPrintWmtsMatrix);
   }
 
