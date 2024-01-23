@@ -6,12 +6,22 @@
   },
   "license": "BSD-3-Clause",
   "repository": "github:geoblocks/mapfishprint",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "src/*.ts"
+    "src",
+    "lib",
+    "CHANGES.md"
   ],
+  "type": "module",
+  "module": "lib/index.js",
+  "types": "lib/types/index.d.ts",
   "scripts": {
-    "lint": "eslint src/",
-    "typing": "tsc"
+    "eslint": "eslint src",
+    "lint": "npm run eslint && npm run typecheck",
+    "prepare": "tsc --pretty",
+    "typecheck": "tsc --pretty --noEmit"
   },
   "dependencies": {
     "@types/geojson": "7946.0.10"
