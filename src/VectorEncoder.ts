@@ -146,7 +146,7 @@ export default class VectorEncoder {
           mapfishStyleObject,
           geojsonFeature,
           geometryType,
-          style
+          style,
         );
       }
     });
@@ -208,7 +208,7 @@ export default class VectorEncoder {
     mapfishStyleObject: MapFishPrintVectorStyle,
     geojsonFeature: GeoJSON.Feature,
     geometryType: GeometryType,
-    style: Style
+    style: Style,
   ) {
     const styleId = this.getDeepStyleUid(style);
     const key = styleKey(styleId);
@@ -252,7 +252,7 @@ export default class VectorEncoder {
 
   encodeVectorStyle(
     geometryType: GeometryType,
-    style: Style
+    style: Style,
   ): MapFishPrintSymbolizers | null {
     if (!(geometryType in PrintStyleTypes_)) {
       // unsupported geometry type
@@ -271,7 +271,7 @@ export default class VectorEncoder {
         this.encodeVectorStylePolygon(
           styleObject.symbolizers,
           fillStyle,
-          strokeStyle
+          strokeStyle,
         );
       }
     } else if (styleType === PrintStyleType.LINE_STRING) {
@@ -294,7 +294,7 @@ export default class VectorEncoder {
       | MapFishPrintSymbolizerPoint
       | MapFishPrintSymbolizerPolygon
       | MapFishPrintSymbolizerText,
-    fillStyle: Fill
+    fillStyle: Fill,
   ) {
     let fillColor = fillStyle.getColor();
     if (fillColor !== null) {
@@ -309,7 +309,7 @@ export default class VectorEncoder {
 
   protected encodeVectorStyleLine(
     symbolizers: MapFishPrintSymbolizer[],
-    strokeStyle: Stroke
+    strokeStyle: Stroke,
   ) {
     const symbolizer = {
       type: 'line',
@@ -321,7 +321,7 @@ export default class VectorEncoder {
 
   protected encodeVectorStylePoint(
     symbolizers: MapFishPrintSymbolizer[],
-    imageStyle: Image
+    imageStyle: Image,
   ) {
     let symbolizer;
     if (imageStyle instanceof olStyleCircle) {
@@ -390,7 +390,7 @@ export default class VectorEncoder {
     symbolizer: MapFishPrintSymbolizerPoint,
     icon: Icon,
     width: number,
-    height: number
+    height: number,
   ) {
     if (!this.hasDefaultAnchor_(icon)) {
       const topLeftOffset = icon.getAnchor();
@@ -425,7 +425,7 @@ export default class VectorEncoder {
   protected encodeVectorStylePolygon(
     symbolizers: MapFishPrintSymbolizer[],
     fillStyle: Fill,
-    strokeStyle: Stroke
+    strokeStyle: Stroke,
   ) {
     const symbolizer = {
       type: 'polygon',
@@ -442,18 +442,18 @@ export default class VectorEncoder {
       | MapFishPrintSymbolizerPoint
       | MapFishPrintSymbolizerLine
       | MapFishPrintSymbolizerPolygon,
-    strokeStyle: Stroke
+    strokeStyle: Stroke,
   ) {
     const strokeColor = strokeStyle.getColor();
     if (strokeColor !== null) {
       console.assert(
-        typeof strokeColor === 'string' || Array.isArray(strokeColor)
+        typeof strokeColor === 'string' || Array.isArray(strokeColor),
       );
       // @ts-ignore
       const strokeColorRgba = asArray(strokeColor);
       console.assert(
         Array.isArray(strokeColorRgba),
-        'only supporting stroke colors'
+        'only supporting stroke colors',
       );
       symbolizer.strokeColor = rgbArrayToHex(strokeColorRgba);
       symbolizer.strokeOpacity = strokeColorRgba[3];
@@ -479,7 +479,7 @@ export default class VectorEncoder {
 
   protected encodeVectorStyleText(
     symbolizers: MapFishPrintSymbolizer[],
-    textStyle: Text
+    textStyle: Text,
   ) {
     const label = textStyle.getText();
     if (label) {
@@ -501,13 +501,13 @@ export default class VectorEncoder {
         const strokeColor = strokeStyle.getColor();
         if (strokeColor) {
           console.assert(
-            typeof strokeColor === 'string' || Array.isArray(strokeColor)
+            typeof strokeColor === 'string' || Array.isArray(strokeColor),
           );
           // @ts-ignore
           const strokeColorRgba = asArray(strokeColor);
           console.assert(
             Array.isArray(strokeColorRgba),
-            'only supporting stroke colors'
+            'only supporting stroke colors',
           );
           symbolizer.haloColor = rgbArrayToHex(strokeColorRgba);
           symbolizer.haloOpacity = strokeColorRgba[3];
