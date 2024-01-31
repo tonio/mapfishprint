@@ -28,18 +28,18 @@ export default class {
   line(
     layerState: State,
     symbolizer: MapFishPrintSymbolizerLine,
-    stroke: Stroke
+    stroke: Stroke,
   ) {}
 
   point(
     layerState: State,
     symbolizer: MapFishPrintSymbolizerPoint,
-    image: Image
+    image: Image,
   ) {}
 
   wmtsLayer(
     layerState: State,
     wmtsLayer: MapFishPrintWmtsLayer,
-    source: WMTS
+    source: WMTS,
   ) {}
 }

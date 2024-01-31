@@ -40,7 +40,7 @@ const scratchOpacityCanvas = document.createElement('canvas');
 
 export function asOpacity(
   canvas: HTMLCanvasElement,
-  opacity: number
+  opacity: number,
 ): HTMLCanvasElement {
   const ctx = scratchOpacityCanvas.getContext('2d')!;
   scratchOpacityCanvas.width = canvas.width;
@@ -79,14 +79,14 @@ export default abstract class MapfishPrintBaseEncoder {
     layout: string,
     format: string,
     customAttributes: Record<string, any>,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): Promise<MapFishPrintSpec> {
     const mapSpec = await this.encodeMap(
       map,
       scale,
       printResolution,
       dpi,
-      customizer
+      customizer,
     );
     const attributes = {
       map: mapSpec,
@@ -105,7 +105,7 @@ export default abstract class MapfishPrintBaseEncoder {
   }
 
   async requestReport(
-    spec: MapFishPrintSpec
+    spec: MapFishPrintSpec,
   ): Promise<MapFishPrintReportResponse> {
     const report = await fetch(`${this.url}/report.${spec.format}`, {
       method: 'POST',
@@ -121,7 +121,7 @@ export default abstract class MapfishPrintBaseEncoder {
   // FIXME: handle errors
   getDownloadUrl(
     response: MapFishPrintReportResponse,
-    interval = 1000
+    interval = 1000,
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       const intervalId = setInterval(async () => {
@@ -137,7 +137,7 @@ export default abstract class MapfishPrintBaseEncoder {
   async mapToLayers(
     map: Map,
     printResolution: number,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): Promise<MapFishPrintLayer[]> {
     const mapLayerGroup = map.getLayerGroup();
     console.assert(!!mapLayerGroup);
@@ -154,7 +154,7 @@ export default abstract class MapfishPrintBaseEncoder {
       const spec = await this.encodeLayer(
         layerState,
         printResolution,
-        customizer
+        customizer,
       );
       if (spec) {
         if (Array.isArray(spec)) {
@@ -172,12 +172,12 @@ export default abstract class MapfishPrintBaseEncoder {
     scale: number,
     printResolution: number,
     dpi: number,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): Promise<MapFishPrintMap>;
   abstract encodeLayer(
     layerState: State,
     printResolution: number,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): Promise<MapFishPrintLayer[] | MapFishPrintLayer | null>;
 
   encodeTileLayer(layerState: State, customizer: BaseCustomizer) {
@@ -193,7 +193,7 @@ export default abstract class MapfishPrintBaseEncoder {
 
   encodeTileWmtsLayer(
     layerState: State,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): MapFishPrintWmtsLayer {
     const layer = layerState.layer;
     console.assert(layer instanceof olLayerTile);
@@ -229,7 +229,7 @@ export default abstract class MapfishPrintBaseEncoder {
     resolution: number,
     coordinateToPixelTransform: Transform,
     vectorContext: VectorContext,
-    additionalDraw: (geometry: Geometry) => void
+    additionalDraw: (geometry: Geometry) => void,
   ): void {
     if (!styleFunction) {
       return;
@@ -247,7 +247,7 @@ export default abstract class MapfishPrintBaseEncoder {
           flatCoordinates.length,
           stride || 2,
           coordinateToPixelTransform,
-          dest
+          dest,
         );
       });
       const styles = styleFunction(f, resolution);
@@ -269,7 +269,7 @@ export default abstract class MapfishPrintBaseEncoder {
   createCoordinateToPixelTransform(
     printExtent: Extent,
     resolution: number,
-    size: number[]
+    size: number[],
   ): Transform {
     const coordinateToPixelTransform = createTransform();
     const center = getExtentCenter(printExtent);
@@ -283,7 +283,7 @@ export default abstract class MapfishPrintBaseEncoder {
       -1 / resolution,
       0,
       -center[0],
-      -center[1]
+      -center[1],
     );
     return coordinateToPixelTransform;
   }
@@ -291,6 +291,6 @@ export default abstract class MapfishPrintBaseEncoder {
   abstract encodeAsImageLayer(
     layerState: State,
     resolution: number,
-    customizer: BaseCustomizer
+    customizer: BaseCustomizer,
   ): void;
 }
