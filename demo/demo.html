@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Mapfishprint geoblocks demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- "ol/": "https://unpkg.com/ol@8.2.0/" -->
+    <script type="importmap">
+      {
+        "imports": {
+          "pbf": "./stub.js",
+          "rbush": "../node_modules/rbush/index.js",
+          "quickselect": "../node_modules/quickselect/index.js",
+          "ol": "../node_modules/ol/index.js",
+          "ol/": "../node_modules/ol/",
+          "@geoblocks/mapfishprint": "../lib/index.js",
+          "@geoblocks/mapfishprint/": "../lib/"
+        }
+      }
+    </script>
+    <script type="module" src="./demo.js"></script>
+  </head>
+  <body>
+  </body>
+</html>
