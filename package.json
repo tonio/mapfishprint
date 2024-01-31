@@ -14,21 +14,31 @@
   "type": "module",
   "module": "lib/index.js",
   "types": "lib/types/index.d.ts",
+  "ava": {
+    "require": [
+      "./setup-browser-env.js"
+    ]
+  },
   "scripts": {
-    "eslint": "eslint src",
+    "test": "npm run prepare && ava",
+    "eslint": "eslint src *.js",
     "checks": "npm run eslint && npm run typecheck",
-    "prettier-fix": "prettier -w src",
-    "prepare": "tsc --pretty",
+    "prettier-fix": "prettier -w src *.js",
+    "prepare": "tsc --pretty && node node_modules/@geoblocks/recast-utils/fix_paths lib",
     "typecheck": "tsc --pretty --noEmit"
   },
   "dependencies": {
+    "@babel/parser": "^7.23.9",
     "@types/geojson": "7946.0.10"
   },
   "peerDependencies": {
     "ol": "6 || 7 || 8"
   },
   "devDependencies": {
+    "@geoblocks/print": "^0.7.4",
+    "@geoblocks/recast-utils": "^0.1.0",
     "@typescript-eslint/eslint-plugin": "6.20.0",
+    "ava": "^6.1.1",
     "eslint": "8.56.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.1.3",
