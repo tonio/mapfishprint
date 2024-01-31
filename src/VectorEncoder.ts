@@ -2,14 +2,14 @@
  * @module app.print.VectorEncoder
  */
 import {rgbArrayToHex} from './mapfishprintUtils';
-import {GeoJSON as olFormatGeoJSON} from 'ol/format';
-import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style';
-import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style';
+import {GeoJSON as olFormatGeoJSON} from 'ol/format.js';
+import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style.js';
+import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style.js';
 import {getUid} from 'ol';
-import {asArray} from 'ol/color';
-import {toDegrees} from 'ol/math';
-import VectorSource from 'ol/source/Vector';
-import type VectorLayer from 'ol/layer/Vector';
+import {asArray} from 'ol/color.js';
+import {toDegrees} from 'ol/math.js';
+import VectorSource from 'ol/source/Vector.js';
+import type VectorLayer from 'ol/layer/Vector.js';
 import type BaseCustomizer from './BaseCustomizer';
 import type {
   MapFishPrintSymbolizer,
@@ -21,7 +21,7 @@ import type {
   MapFishPrintVectorLayer,
   MapFishPrintVectorStyle,
 } from './mapfishprintTypes';
-import type {State} from 'ol/layer/Layer';
+import type {State} from 'ol/layer/Layer.js';
 
 export const PrintStyleType = {
   LINE_STRING: 'LineString',

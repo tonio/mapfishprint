@@ -1,7 +1,7 @@
-import type {Geometry} from 'ol/geom';
-import type {State} from 'ol/layer/Layer';
-import type {WMTS} from 'ol/source';
-import type {Image, Stroke} from 'ol/style';
+import type {Geometry} from 'ol/geom.js';
+import type {State} from 'ol/layer/Layer.js';
+import type {WMTS} from 'ol/source.js';
+import type {Image, Stroke} from 'ol/style.js';
 import type {
   MapFishPrintSymbolizerLine,
   MapFishPrintSymbolizerPoint,

@@ -1,20 +1,21 @@
-/**
- * @module app.print.Service
- */
-import {getWmtsMatrices} from './mapfishprintUtils';
-import olLayerTile from 'ol/layer/Tile';
-import olSourceWMTS from 'ol/source/WMTS';
-import type {Transform} from 'ol/transform';
+import {getWmtsMatrices, asOpacity, getWmtsUrl} from './mapfishprintUtils';
+import olLayerTile from 'ol/layer/Tile.js';
+import olSourceWMTS from 'ol/source/WMTS.js';
+import type {Transform} from 'ol/transform.js';
 import {
   create as createTransform,
   compose as composeTransform,
-} from 'ol/transform';
-import type {Extent} from 'ol/extent';
-import {getCenter as getExtentCenter} from 'ol/extent';
-import {transform2D} from 'ol/geom/flat/transform';
+} from 'ol/transform.js';
+import type {Extent} from 'ol/extent.js';
+import {
+  getWidth as getExtentWidth,
+  getHeight as getExtentHeight,
+} from 'ol/extent.js';
+import {getCenter as getExtentCenter} from 'ol/extent.js';
+import {transform2D} from 'ol/geom/flat/transform.js';
 
 import type BaseCustomizer from './BaseCustomizer';
-import type Map from 'ol/Map';
+import type Map from 'ol/Map.js';
 import type {
   MapFishPrintLayer,
   MapFishPrintMap,
@@ -23,44 +24,23 @@ import type {
   MapFishPrintStatusResponse,
   MapFishPrintWmtsLayer,
 } from './mapfishprintTypes';
-import type WMTS from 'ol/source/WMTS';
+import type WMTS from 'ol/source/WMTS.js';
 import type {Feature} from 'ol';
-import type {StyleFunction} from 'ol/style/Style';
-import type VectorContext from 'ol/render/VectorContext';
-import type {Geometry} from 'ol/geom';
-import type {State} from 'ol/layer/Layer';
+import type {StyleFunction} from 'ol/style/Style.js';
+import type VectorContext from 'ol/render/VectorContext.js';
+import type {Geometry, MultiPolygon, Polygon} from 'ol/geom.js';
+import type {State} from 'ol/layer/Layer.js';
+import {toDegrees} from 'ol/math.js';
+import VectorTileLayer from 'ol/layer/VectorTile.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorEncoder from './VectorEncoder';
+import {toContext} from 'ol/render.js';
+import VectorSource from 'ol/source/Vector.js';
+import {MVTEncoder} from '@geoblocks/print';
 
-const getAbsoluteUrl_ = (url: string): string => {
-  const a = document.createElement('a');
-  a.href = encodeURI(url);
-  return decodeURI(a.href);
-};
-
-const scratchOpacityCanvas = document.createElement('canvas');
-
-export function asOpacity(
-  canvas: HTMLCanvasElement,
-  opacity: number,
-): HTMLCanvasElement {
-  const ctx = scratchOpacityCanvas.getContext('2d')!;
-  scratchOpacityCanvas.width = canvas.width;
-  scratchOpacityCanvas.height = canvas.height;
-  ctx.globalAlpha = opacity;
-  ctx.drawImage(canvas, 0, 0);
-  return scratchOpacityCanvas;
-}
-
-/**
- * Return the WMTS URL to use in the print spec.
- */
-const getWmtsUrl_ = (source: WMTS): string => {
-  const urls = source.getUrls()!;
-  console.assert(urls.length > 0);
-  return getAbsoluteUrl_(urls[0]);
-};
-
-export default abstract class MapfishPrintBaseEncoder {
+export default class MapfishPrintBaseEncoder {
   readonly url: string;
+  private scratchCanvas: HTMLCanvasElement = document.createElement('canvas');
 
   /**
    * Provides a function to create app.print.Service objects used to
@@ -167,18 +147,90 @@ export default abstract class MapfishPrintBaseEncoder {
     return layers;
   }
 
-  abstract encodeMap(
+  async encodeMap(
     map: Map,
     scale: number,
     printResolution: number,
     dpi: number,
     customizer: BaseCustomizer,
-  ): Promise<MapFishPrintMap>;
-  abstract encodeLayer(
+  ): Promise<MapFishPrintMap> {
+    const view = map.getView();
+    const center = view.getCenter();
+    const projection = view.getProjection().getCode();
+    const rotation = toDegrees(view.getRotation());
+    const layers = await this.mapToLayers(map, printResolution, customizer);
+
+    const spec = {
+      center,
+      dpi,
+      pdfA: false,
+      projection,
+      rotation,
+      scale,
+      layers,
+    } as MapFishPrintMap;
+    return spec;
+  }
+
+  async encodeLayer(
     layerState: State,
     printResolution: number,
     customizer: BaseCustomizer,
-  ): Promise<MapFishPrintLayer[] | MapFishPrintLayer | null>;
+  ): Promise<MapFishPrintLayer[] | MapFishPrintLayer | null> {
+    if (
+      !layerState.visible ||
+      printResolution < layerState.minResolution ||
+      printResolution >= layerState.maxResolution
+    ) {
+      return null;
+    }
+    const layer = layerState.layer;
+
+    if (layer instanceof VectorTileLayer) {
+      const encoder = new MVTEncoder();
+      const printExtent = customizer.printExtent;
+      const width = getExtentWidth(printExtent) / printResolution;
+      const height = getExtentHeight(printExtent) / printResolution;
+      const canvasSize: [number, number] = [width, height];
+      const printOptions = {
+        layer,
+        printExtent: customizer.printExtent,
+        tileResolution: printResolution,
+        styleResolution: printResolution,
+        canvasSize: canvasSize,
+      };
+      const r = await encoder.encodeMVTLayer(printOptions);
+      return r
+        .filter((rr) => rr.baseURL.length > 6)
+        .map(
+          (rr) =>
+            Object.assign(
+              {
+                type: 'image',
+                name: layer.get('name'),
+                opacity: 1,
+                imageFormat: 'image/png',
+              },
+              rr,
+            ) as MapFishPrintLayer,
+        );
+    }
+    if (layer instanceof olLayerTile) {
+      return this.encodeTileLayer(layerState, customizer);
+    } else if (layer instanceof VectorLayer) {
+      const encoded = new VectorEncoder(
+        layerState,
+        customizer,
+      ).encodeVectorLayer(printResolution)!;
+      const renderAsSvg = layer.get('renderAsSvg');
+      if (renderAsSvg !== undefined) {
+        encoded.renderAsSvg = renderAsSvg;
+      }
+      return encoded;
+    } else {
+      return null;
+    }
+  }
 
   encodeTileLayer(layerState: State, customizer: BaseCustomizer) {
     const layer = layerState.layer;
@@ -206,7 +258,7 @@ export default abstract class MapfishPrintBaseEncoder {
     // FIXME: remove "as const"
     const wmtsLayer = {
       type: 'wmts' as const,
-      baseURL: getWmtsUrl_(source),
+      baseURL: getWmtsUrl(source),
       dimensions,
       dimensionParams,
       imageFormat: source.getFormat(),
@@ -288,9 +340,47 @@ export default abstract class MapfishPrintBaseEncoder {
     return coordinateToPixelTransform;
   }
 
-  abstract encodeAsImageLayer(
+  async encodeAsImageLayer(
     layerState: State,
     resolution: number,
     customizer: BaseCustomizer,
-  ): void;
+  ) {
+    const layer = layerState.layer as VectorLayer<VectorSource>;
+    const printExtent = customizer.printExtent;
+    const width = getExtentWidth(printExtent) / resolution;
+    const height = getExtentHeight(printExtent) / resolution;
+    const size: [number, number] = [width, height];
+    const vectorContext = toContext(this.scratchCanvas.getContext('2d')!, {
+      size,
+      pixelRatio: 1,
+    });
+    const coordinateToPixelTransform = this.createCoordinateToPixelTransform(
+      printExtent,
+      resolution,
+      size,
+    );
+    const features = layer.getSource()!.getFeatures();
+    const styleFunction = layer.getStyleFunction();
+    const additionalDraw = (geometry: Polygon | MultiPolygon) => {};
+
+    this.drawFeaturesToContext(
+      features,
+      styleFunction,
+      resolution,
+      coordinateToPixelTransform,
+      vectorContext,
+      additionalDraw as any,
+    );
+
+    return {
+      type: 'image',
+      extent: printExtent,
+      imageFormat: 'image/png', // this is the target image format in the mapfish-print
+      opacity: 1, // FIXME: mapfish-print is not handling the opacity correctly for images with dataurl.
+      name: layer.get('name'),
+      baseURL: asOpacity(this.scratchCanvas, layer.getOpacity()).toDataURL(
+        'PNG',
+      ),
+    };
+  }
 }

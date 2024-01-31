@@ -1,4 +1,4 @@
-import type {RequestEncoding} from 'ol/source/WMTS';
+import type {RequestEncoding} from 'ol/source/WMTS.js';
 
 export interface MapFishPrintLayer {
   renderAsSvg?: boolean;
