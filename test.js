@@ -2,15 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert';
 
 import Map from 'ol/Map.js';
-import {MapfishPrintBaseEncoder} from './lib/index.js';
-import BaseCustomizer from './lib/BaseCustomizer.js';
+import {MFPEncoder, BaseCustomizer} from './lib/index.js';
 import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
 import {View} from 'ol';
 import {fromLonLat} from 'ol/proj.js';
 
 test('Empty map', async (t) => {
-  const encoder = new MapfishPrintBaseEncoder('./mfp_server_url');
+  const encoder = new MFPEncoder('./mfp_server_url');
   const customizer = new BaseCustomizer([0, 0, 1000, 1000]);
   const map = new Map({
     view: new View({
@@ -62,7 +61,7 @@ test('OSM map', async (t) => {
       zoom: 12,
     }),
   });
-  class MyMfpBaseEncoder extends MapfishPrintBaseEncoder {}
+  class MyMfpBaseEncoder extends MFPEncoder {}
 
   const encoder = new MyMfpBaseEncoder(MFP_URL);
   const customizer = new BaseCustomizer([0, 0, 10000, 10000]);

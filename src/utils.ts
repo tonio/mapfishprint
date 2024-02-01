@@ -1,6 +1,6 @@
 import WMTSTileGrid from 'ol/tilegrid/WMTS.js';
 import {toSize} from 'ol/size.js';
-import type {MapFishPrintWmtsMatrix} from './mapfishprintTypes';
+import type {MFPReportResponse, MFPSpec, MFPStatusResponse, MFPWmtsMatrix} from './types';
 import type {WMTS} from 'ol/source.js';
 
 // "Standardized rendering pixel size" is defined as 0.28 mm, see http://www.opengeospatial.org/standards/wmts
@@ -36,13 +36,13 @@ export function rgbArrayToHex(rgb: number[]): string {
   return `#${hexR}${hexG}${hexB}`;
 }
 
-export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
+export function getWmtsMatrices(source: WMTS): MFPWmtsMatrix[] {
   const projection = source.getProjection()!;
   const tileGrid = source.getTileGrid() as WMTSTileGrid;
   console.assert(tileGrid instanceof WMTSTileGrid);
 
   const matrixIds = tileGrid.getMatrixIds();
-  const wmtsMatrices: MapFishPrintWmtsMatrix[] = [];
+  const wmtsMatrices: MFPWmtsMatrix[] = [];
   const metersPerUnit = projection.getMetersPerUnit()!;
   console.assert(!!metersPerUnit);
 
@@ -55,7 +55,7 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
       tileSize: toSize(tileGrid.getTileSize(i)),
       topLeftCorner: tileGrid.getOrigin(i),
       matrixSize: [tileRange.maxX - tileRange.minX, tileRange.maxY - tileRange.minY],
-    } as MapFishPrintWmtsMatrix);
+    } as MFPWmtsMatrix);
   }
 
   return wmtsMatrices;
@@ -84,4 +84,37 @@ export function getWmtsUrl(source: WMTS): string {
   const urls = source.getUrls()!;
   console.assert(urls.length > 0);
   return getAbsoluteUrl(urls[0]);
+}
+
+export async function getStatus(mfpBaseUrl: string, ref: string): Promise<MFPStatusResponse> {
+  return await (await fetch(`${mfpBaseUrl}/status/${ref}.json`)).json();
+}
+
+export async function requestReport(mfpBaseUrl: string, spec: MFPSpec): Promise<MFPReportResponse> {
+  const report = await fetch(`${mfpBaseUrl}/report.${spec.format}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(spec),
+  });
+  return await report.json();
+}
+
+// FIXME: add timeout
+// FIXME: handle errors
+export async function getDownloadUrl(
+  requestReport: string,
+  response: MFPReportResponse,
+  interval = 1000,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const intervalId = setInterval(async () => {
+      const status = await getStatus(requestReport, response.ref);
+      if (status.done) {
+        clearInterval(intervalId);
+        resolve(`${requestReport}/report/${response.ref}`);
+      }
+    }, interval);
+  });
 }

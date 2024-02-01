@@ -1,6 +1,6 @@
-import type {RequestEncoding} from 'ol/source/WMTS.js';
+import type {Feature as GeoJSONFeature, FeatureCollection as GeoJSONFeatureCollection} from 'geojson';
 
-export interface MapFishPrintLayer {
+export interface MFPLayer {
   renderAsSvg?: boolean;
   failOnError?: boolean;
   type: string;
@@ -8,11 +8,11 @@ export interface MapFishPrintLayer {
   name: string;
 }
 
-export interface MapFishPrintSymbolizer {
+export interface MFPSymbolizer {
   type: string;
 }
 
-interface StrokeStyle {
+interface MFPStrokeStyle {
   strokeColor: string;
   strokeOpacity: number;
   strokeWidth: number;
@@ -21,12 +21,12 @@ interface StrokeStyle {
   strokeLinejoin: string;
 }
 
-interface FillStyle {
+interface MFPFillStyle {
   fillColor: string;
   fillOpacity: number;
 }
 
-export interface MapFishPrintSymbolizerPoint extends MapFishPrintSymbolizer, StrokeStyle, FillStyle {
+export interface MFPSymbolizerPoint extends MFPSymbolizer, MFPStrokeStyle, MFPFillStyle {
   type: 'point';
   pointRadius: number;
   externalGraphic: string;
@@ -37,15 +37,15 @@ export interface MapFishPrintSymbolizerPoint extends MapFishPrintSymbolizer, Str
   rotation: number;
 }
 
-export interface MapFishPrintSymbolizerLine extends MapFishPrintSymbolizer, StrokeStyle {
+export interface MFPSymbolizerLine extends MFPSymbolizer, MFPStrokeStyle {
   type: 'line';
 }
 
-export interface MapFishPrintSymbolizerPolygon extends MapFishPrintSymbolizer, StrokeStyle, FillStyle {
+export interface MFPSymbolizerPolygon extends MFPSymbolizer, MFPStrokeStyle, MFPFillStyle {
   type: 'polygon';
 }
 
-export interface MapFishPrintSymbolizerText extends MapFishPrintSymbolizer, FillStyle {
+export interface MFPSymbolizerText extends MFPSymbolizer, MFPFillStyle {
   type: 'text';
   fontColor: string;
   fontFamily: string;
@@ -62,19 +62,19 @@ export interface MapFishPrintSymbolizerText extends MapFishPrintSymbolizer, Fill
   labelYOffset: number;
 }
 
-export interface MapFishPrintSymbolizers {
-  symbolizers: MapFishPrintSymbolizer[];
+export interface MFPSymbolizers {
+  symbolizers: MFPSymbolizer[];
 }
 
-export type MapFishPrintVectorStyle = MapFishPrintSymbolizers | Record<string, number>;
+export type MFPVectorStyle = MFPSymbolizers | Record<string, number>;
 
-export interface MapFishPrintVectorLayer extends MapFishPrintLayer {
+export interface MFPVectorLayer extends MFPLayer {
   type: 'geojson';
-  geoJson: GeoJSON.Feature | GeoJSON.FeatureCollection | string;
-  style: MapFishPrintVectorStyle;
+  geoJson: GeoJSONFeature | GeoJSONFeatureCollection | string;
+  style: MFPVectorStyle;
 }
 
-export interface MapFishPrintWmtsMatrix {
+export interface MFPWmtsMatrix {
   identifier: string;
   scaleDenominator: number;
   tileSize: number[];
@@ -82,21 +82,30 @@ export interface MapFishPrintWmtsMatrix {
   matrixSize: number[];
 }
 
-export interface MapFishPrintWmtsLayer extends MapFishPrintLayer {
+export interface MFPWmtsLayer extends MFPLayer {
   type: 'wmts';
   baseURL: string;
   dimensions: string[];
   dimensionParams: Record<string, string>;
   imageFormat: string;
   layer: string;
-  matrices: MapFishPrintWmtsMatrix[];
+  matrices: MFPWmtsMatrix[];
   matrixSet: string;
-  requestEncoding: RequestEncoding;
+  requestEncoding: 'KVP' | 'REST';
   style: string;
   version: string;
 }
 
-export interface MapFishPrintOSMLayer extends MapFishPrintLayer {
+export interface MFPImageLayer extends MFPLayer {
+  type: 'image';
+  extent: number[];
+  imageFormat: string;
+  opacity: number;
+  name: string;
+  baseURL: string;
+}
+
+export interface MFPOSMLayer extends MFPLayer {
   type: 'osm';
   baseURL: string;
   // dpi: number;
@@ -106,38 +115,38 @@ export interface MapFishPrintOSMLayer extends MapFishPrintLayer {
   // rasterStyle: string;
 }
 
-export interface MapFishPrintMap {
+export interface MFPMap {
   box?: number[];
   center: number[];
   scale: number;
   dpi: number;
-  layers: MapFishPrintLayer[];
+  layers: MFPLayer[];
   projection: string;
   rotation: number;
   useNearestScale?: boolean;
 }
 
-export interface MapFishPrintAttributes {
-  map: MapFishPrintMap;
+export interface MFPAttributes {
+  map: MFPMap;
   // FIXME: I don't know what to put here
   // See http://mapfish.github.io/mapfish-print-doc/attributes.html#!datasource
   datasource: any[];
 }
 
-export interface MapFishPrintSpec {
-  attributes: MapFishPrintAttributes;
+export interface MFPSpec {
+  attributes: MFPAttributes;
   layout: string;
   format: string;
   smtp?: Record<string, string>;
 }
 
-export interface MapFishPrintReportResponse {
+export interface MFPReportResponse {
   ref: string;
   statusURL: string;
   downloadURL: string;
 }
 
-export interface MapFishPrintStatusResponse {
+export interface MFPStatusResponse {
   done: boolean;
   downloadURL: string;
   elapsedTime: number;
