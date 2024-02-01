@@ -1,4 +1,5 @@
-import test from 'ava';
+import test from 'node:test';
+import assert from 'node:assert';
 
 import Map from 'ol/Map.js';
 import {MapfishPrintBaseEncoder} from './lib/index.js';
@@ -28,7 +29,7 @@ test('Empty map', async (t) => {
     customAttributes: {},
     customizer: customizer,
   });
-  t.deepEqual(result, {
+  assert.deepEqual(result, {
     attributes: {
       datasource: [],
       map: {
@@ -76,7 +77,7 @@ test('OSM map', async (t) => {
     customizer: customizer,
   });
 
-  t.deepEqual(spec, {
+  assert.deepEqual(spec, {
     attributes: {
       datasource: [],
       map: {
