@@ -5,7 +5,7 @@ import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
 import {fromLonLat} from 'ol/proj.js';
 
-const MFP_URL = 'https://geomapfish-demo-2-5.camptocamp.com/printproxy';
+const MFP_URL = 'https://geomapfish-demo-2-8.camptocamp.com/printproxy';
 const layout = '1 A4 portrait'; // better take from MFP
 const map = new Map({
   target: 'map',
