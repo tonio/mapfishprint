@@ -1,15 +1,23 @@
 # geoblocks / mapfishprint
 
-Print [OpenLayers](https://openlayers.org/) map using [MapFishPrint](https://github.com/mapfish/mapfish-print).
+Standalone JS library for printing [OpenLayers](https://openlayers.org/) map using [MapFishPrint v3](https://github.com/mapfish/mapfish-print).
 
-## Installation
+Features:
+
+- retrieve MapFishPrint capabilities;
+- introspect map / layers and convert them to MapFishPrint spec format;
+- customize transformations;
+- post report and poll for result;
+
+## Usage
 
 ```shell
 npm install @geoblocks/mapfishprint
 ```
 
-OpenLayers is a peer dependency, so you need to install it too.
+See https://geoblocks.github.io/mapfishprint/demo.html
 
-```shell
-npm install ol
-```
+## Community
+
+This is an opensource community project for all users of MapfishPrint v3.
+We welcome everyone to join forces to discuss, maintain, improve, ... this project.
