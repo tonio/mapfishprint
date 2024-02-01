@@ -15,7 +15,7 @@ Features:
 npm install @geoblocks/mapfishprint
 ```
 
-See https://geoblocks.github.io/mapfishprint/demo.html
+See the [live demo](https://geoblocks.github.io/mapfishprint/demo.html) and the [code documentation](https://geoblocks.github.io/mapfishprint/docs/index.html).
 
 ## Community
 
