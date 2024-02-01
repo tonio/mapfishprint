@@ -1,4 +1,4 @@
-import type {RequestEncoding} from 'ol/source/WMTS';
+import type {RequestEncoding} from 'ol/source/WMTS.js';
 
 export interface MapFishPrintLayer {
   renderAsSvg?: boolean;
@@ -26,10 +26,7 @@ interface FillStyle {
   fillOpacity: number;
 }
 
-export interface MapFishPrintSymbolizerPoint
-  extends MapFishPrintSymbolizer,
-    StrokeStyle,
-    FillStyle {
+export interface MapFishPrintSymbolizerPoint extends MapFishPrintSymbolizer, StrokeStyle, FillStyle {
   type: 'point';
   pointRadius: number;
   externalGraphic: string;
@@ -40,22 +37,15 @@ export interface MapFishPrintSymbolizerPoint
   rotation: number;
 }
 
-export interface MapFishPrintSymbolizerLine
-  extends MapFishPrintSymbolizer,
-    StrokeStyle {
+export interface MapFishPrintSymbolizerLine extends MapFishPrintSymbolizer, StrokeStyle {
   type: 'line';
 }
 
-export interface MapFishPrintSymbolizerPolygon
-  extends MapFishPrintSymbolizer,
-    StrokeStyle,
-    FillStyle {
+export interface MapFishPrintSymbolizerPolygon extends MapFishPrintSymbolizer, StrokeStyle, FillStyle {
   type: 'polygon';
 }
 
-export interface MapFishPrintSymbolizerText
-  extends MapFishPrintSymbolizer,
-    FillStyle {
+export interface MapFishPrintSymbolizerText extends MapFishPrintSymbolizer, FillStyle {
   type: 'text';
   fontColor: string;
   fontFamily: string;
@@ -76,9 +66,7 @@ export interface MapFishPrintSymbolizers {
   symbolizers: MapFishPrintSymbolizer[];
 }
 
-export type MapFishPrintVectorStyle =
-  | MapFishPrintSymbolizers
-  | Record<string, number>;
+export type MapFishPrintVectorStyle = MapFishPrintSymbolizers | Record<string, number>;
 
 export interface MapFishPrintVectorLayer extends MapFishPrintLayer {
   type: 'geojson';
@@ -108,6 +96,16 @@ export interface MapFishPrintWmtsLayer extends MapFishPrintLayer {
   version: string;
 }
 
+export interface MapFishPrintOSMLayer extends MapFishPrintLayer {
+  type: 'osm';
+  baseURL: string;
+  // dpi: number;
+  // customParams?: any[];
+  // imageExtension: string;
+  // layer: string;
+  // rasterStyle: string;
+}
+
 export interface MapFishPrintMap {
   box?: number[];
   center: number[];
@@ -121,6 +119,9 @@ export interface MapFishPrintMap {
 
 export interface MapFishPrintAttributes {
   map: MapFishPrintMap;
+  // FIXME: I don't know what to put here
+  // See http://mapfish.github.io/mapfish-print-doc/attributes.html#!datasource
+  datasource: any[];
 }
 
 export interface MapFishPrintSpec {

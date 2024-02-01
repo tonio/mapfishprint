@@ -27,5 +27,8 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "files": [
+    "src/index.ts"
+  ]
 }

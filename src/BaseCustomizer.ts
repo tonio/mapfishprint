@@ -1,14 +1,14 @@
-import type {Geometry} from 'ol/geom';
-import type {State} from 'ol/layer/Layer';
-import type {WMTS} from 'ol/source';
-import type {Image, Stroke} from 'ol/style';
+import type {Geometry} from 'ol/geom.js';
+import type {State} from 'ol/layer/Layer.js';
+import type {WMTS} from 'ol/source.js';
+import type {Image, Stroke} from 'ol/style.js';
 import type {
   MapFishPrintSymbolizerLine,
   MapFishPrintSymbolizerPoint,
   MapFishPrintWmtsLayer,
 } from './mapfishprintTypes';
 
-export default class {
+export default class BaseCustomizer {
   readonly printExtent: number[];
 
   constructor(printExtent: number[]) {
@@ -25,21 +25,9 @@ export default class {
 
   feature(layerState: State, feature: GeoJSON.Feature) {}
 
-  line(
-    layerState: State,
-    symbolizer: MapFishPrintSymbolizerLine,
-    stroke: Stroke,
-  ) {}
+  line(layerState: State, symbolizer: MapFishPrintSymbolizerLine, stroke: Stroke) {}
 
-  point(
-    layerState: State,
-    symbolizer: MapFishPrintSymbolizerPoint,
-    image: Image,
-  ) {}
+  point(layerState: State, symbolizer: MapFishPrintSymbolizerPoint, image: Image) {}
 
-  wmtsLayer(
-    layerState: State,
-    wmtsLayer: MapFishPrintWmtsLayer,
-    source: WMTS,
-  ) {}
+  wmtsLayer(layerState: State, wmtsLayer: MapFishPrintWmtsLayer, source: WMTS) {}
 }

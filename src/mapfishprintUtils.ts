@@ -1,7 +1,7 @@
-import WMTSTileGrid from 'ol/tilegrid/WMTS';
-import {toSize} from 'ol/size';
+import WMTSTileGrid from 'ol/tilegrid/WMTS.js';
+import {toSize} from 'ol/size.js';
 import type {MapFishPrintWmtsMatrix} from './mapfishprintTypes';
-import type {WMTS} from 'ol/source';
+import type {WMTS} from 'ol/source.js';
 
 // "Standardized rendering pixel size" is defined as 0.28 mm, see http://www.opengeospatial.org/standards/wmts
 const WMTS_PIXEL_SIZE_ = 0.28e-3;
@@ -54,12 +54,34 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
       scaleDenominator: resolutionMeters / WMTS_PIXEL_SIZE_,
       tileSize: toSize(tileGrid.getTileSize(i)),
       topLeftCorner: tileGrid.getOrigin(i),
-      matrixSize: [
-        tileRange.maxX - tileRange.minX,
-        tileRange.maxY - tileRange.minY,
-      ],
+      matrixSize: [tileRange.maxX - tileRange.minX, tileRange.maxY - tileRange.minY],
     } as MapFishPrintWmtsMatrix);
   }
 
   return wmtsMatrices;
+}
+
+const scratchOpacityCanvas = document.createElement('canvas');
+export function asOpacity(canvas: HTMLCanvasElement, opacity: number): HTMLCanvasElement {
+  const ctx = scratchOpacityCanvas.getContext('2d')!;
+  scratchOpacityCanvas.width = canvas.width;
+  scratchOpacityCanvas.height = canvas.height;
+  ctx.globalAlpha = opacity;
+  ctx.drawImage(canvas, 0, 0);
+  return scratchOpacityCanvas;
+}
+
+export function getAbsoluteUrl(url: string): string {
+  const a = document.createElement('a');
+  a.href = encodeURI(url);
+  return decodeURI(a.href);
+}
+
+/**
+ * Return the WMTS URL to use in the print spec.
+ */
+export function getWmtsUrl(source: WMTS): string {
+  const urls = source.getUrls()!;
+  console.assert(urls.length > 0);
+  return getAbsoluteUrl(urls[0]);
 }

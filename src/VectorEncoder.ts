@@ -2,14 +2,14 @@
  * @module app.print.VectorEncoder
  */
 import {rgbArrayToHex} from './mapfishprintUtils';
-import {GeoJSON as olFormatGeoJSON} from 'ol/format';
-import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style';
-import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style';
+import {GeoJSON as olFormatGeoJSON} from 'ol/format.js';
+import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style.js';
+import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style.js';
 import {getUid} from 'ol';
-import {asArray} from 'ol/color';
-import {toDegrees} from 'ol/math';
-import VectorSource from 'ol/source/Vector';
-import type VectorLayer from 'ol/layer/Vector';
+import {asArray} from 'ol/color.js';
+import {toDegrees} from 'ol/math.js';
+import VectorSource from 'ol/source/Vector.js';
+import type VectorLayer from 'ol/layer/Vector.js';
 import type BaseCustomizer from './BaseCustomizer';
 import type {
   MapFishPrintSymbolizer,
@@ -21,7 +21,7 @@ import type {
   MapFishPrintVectorLayer,
   MapFishPrintVectorStyle,
 } from './mapfishprintTypes';
-import type {State} from 'ol/layer/Layer';
+import type {State} from 'ol/layer/Layer.js';
 
 export const PrintStyleType = {
   LINE_STRING: 'LineString',
@@ -29,12 +29,7 @@ export const PrintStyleType = {
   POLYGON: 'Polygon',
 } as const;
 
-type GeometryType =
-  | 'LineString'
-  | 'Point'
-  | 'Polygon'
-  | 'MultiLineString'
-  | 'MultiPolygon';
+type GeometryType = 'LineString' | 'Point' | 'Polygon' | 'MultiLineString' | 'MultiPolygon';
 
 export const PrintStyleTypes_ = {
   LineString: PrintStyleType.LINE_STRING,
@@ -91,20 +86,13 @@ export default class VectorEncoder {
 
     features.forEach((feature) => {
       let styleData = null;
-      const styleFunction =
-        feature.getStyleFunction() || this.layer_.getStyleFunction();
+      const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
       if (styleFunction) {
-        styleData = styleFunction(feature, resolution) as
-          | null
-          | Style
-          | Style[];
+        styleData = styleFunction(feature, resolution) as null | Style | Style[];
       }
       const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
 
-      let styles =
-        styleData !== null && !Array.isArray(styleData)
-          ? [styleData]
-          : (styleData as Style[]);
+      let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
       if (!styles) {
         return;
       }
@@ -142,12 +130,7 @@ export default class VectorEncoder {
         }
 
         const geometryType = geometry.getType();
-        this.addVectorStyle(
-          mapfishStyleObject,
-          geojsonFeature,
-          geometryType,
-          style,
-        );
+        this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
       }
     });
 
@@ -250,10 +233,7 @@ export default class VectorEncoder {
     }
   }
 
-  encodeVectorStyle(
-    geometryType: GeometryType,
-    style: Style,
-  ): MapFishPrintSymbolizers | null {
+  encodeVectorStyle(geometryType: GeometryType, style: Style): MapFishPrintSymbolizers | null {
     if (!(geometryType in PrintStyleTypes_)) {
       // unsupported geometry type
       return null;
@@ -268,11 +248,7 @@ export default class VectorEncoder {
     const textStyle = style.getText();
     if (styleType === PrintStyleType.POLYGON) {
       if (fillStyle !== null) {
-        this.encodeVectorStylePolygon(
-          styleObject.symbolizers,
-          fillStyle,
-          strokeStyle,
-        );
+        this.encodeVectorStylePolygon(styleObject.symbolizers, fillStyle, strokeStyle);
       }
     } else if (styleType === PrintStyleType.LINE_STRING) {
       if (strokeStyle !== null) {
@@ -290,10 +266,7 @@ export default class VectorEncoder {
   }
 
   protected encodeVectorStyleFill(
-    symbolizer:
-      | MapFishPrintSymbolizerPoint
-      | MapFishPrintSymbolizerPolygon
-      | MapFishPrintSymbolizerText,
+    symbolizer: MapFishPrintSymbolizerPoint | MapFishPrintSymbolizerPolygon | MapFishPrintSymbolizerText,
     fillStyle: Fill,
   ) {
     let fillColor = fillStyle.getColor();
@@ -307,10 +280,7 @@ export default class VectorEncoder {
     }
   }
 
-  protected encodeVectorStyleLine(
-    symbolizers: MapFishPrintSymbolizer[],
-    strokeStyle: Stroke,
-  ) {
+  protected encodeVectorStyleLine(symbolizers: MapFishPrintSymbolizer[], strokeStyle: Stroke) {
     const symbolizer = {
       type: 'line',
     } as MapFishPrintSymbolizerLine;
@@ -319,10 +289,7 @@ export default class VectorEncoder {
     symbolizers.push(symbolizer);
   }
 
-  protected encodeVectorStylePoint(
-    symbolizers: MapFishPrintSymbolizer[],
-    imageStyle: Image,
-  ) {
+  protected encodeVectorStylePoint(symbolizers: MapFishPrintSymbolizer[], imageStyle: Image) {
     let symbolizer;
     if (imageStyle instanceof olStyleCircle) {
       symbolizer = {
@@ -386,12 +353,7 @@ export default class VectorEncoder {
     }
   }
 
-  addGraphicOffset_(
-    symbolizer: MapFishPrintSymbolizerPoint,
-    icon: Icon,
-    width: number,
-    height: number,
-  ) {
+  addGraphicOffset_(symbolizer: MapFishPrintSymbolizerPoint, icon: Icon, width: number, height: number) {
     if (!this.hasDefaultAnchor_(icon)) {
       const topLeftOffset = icon.getAnchor();
       const centerXOffset = width / 2 - topLeftOffset[0];
@@ -414,12 +376,7 @@ export default class VectorEncoder {
     const hasDefaultXUnits = icon.anchorXUnits_ === 'fraction';
     // @ts-ignore
     const hasDefaultYUnits = icon.anchorYUnits_ === 'fraction';
-    return (
-      hasDefaultCoordinates &&
-      hasDefaultOrigin &&
-      hasDefaultXUnits &&
-      hasDefaultYUnits
-    );
+    return hasDefaultCoordinates && hasDefaultOrigin && hasDefaultXUnits && hasDefaultYUnits;
   }
 
   protected encodeVectorStylePolygon(
@@ -438,23 +395,15 @@ export default class VectorEncoder {
   }
 
   protected encodeVectorStyleStroke(
-    symbolizer:
-      | MapFishPrintSymbolizerPoint
-      | MapFishPrintSymbolizerLine
-      | MapFishPrintSymbolizerPolygon,
+    symbolizer: MapFishPrintSymbolizerPoint | MapFishPrintSymbolizerLine | MapFishPrintSymbolizerPolygon,
     strokeStyle: Stroke,
   ) {
     const strokeColor = strokeStyle.getColor();
     if (strokeColor !== null) {
-      console.assert(
-        typeof strokeColor === 'string' || Array.isArray(strokeColor),
-      );
+      console.assert(typeof strokeColor === 'string' || Array.isArray(strokeColor));
       // @ts-ignore
       const strokeColorRgba = asArray(strokeColor);
-      console.assert(
-        Array.isArray(strokeColorRgba),
-        'only supporting stroke colors',
-      );
+      console.assert(Array.isArray(strokeColorRgba), 'only supporting stroke colors');
       symbolizer.strokeColor = rgbArrayToHex(strokeColorRgba);
       symbolizer.strokeOpacity = strokeColorRgba[3];
     }
@@ -477,10 +426,7 @@ export default class VectorEncoder {
     }
   }
 
-  protected encodeVectorStyleText(
-    symbolizers: MapFishPrintSymbolizer[],
-    textStyle: Text,
-  ) {
+  protected encodeVectorStyleText(symbolizers: MapFishPrintSymbolizer[], textStyle: Text) {
     const label = textStyle.getText();
     if (label) {
       const symbolizer = {
@@ -500,15 +446,10 @@ export default class VectorEncoder {
       if (strokeStyle !== null) {
         const strokeColor = strokeStyle.getColor();
         if (strokeColor) {
-          console.assert(
-            typeof strokeColor === 'string' || Array.isArray(strokeColor),
-          );
+          console.assert(typeof strokeColor === 'string' || Array.isArray(strokeColor));
           // @ts-ignore
           const strokeColorRgba = asArray(strokeColor);
-          console.assert(
-            Array.isArray(strokeColorRgba),
-            'only supporting stroke colors',
-          );
+          console.assert(Array.isArray(strokeColorRgba), 'only supporting stroke colors');
           symbolizer.haloColor = rgbArrayToHex(strokeColorRgba);
           symbolizer.haloOpacity = strokeColorRgba[3];
         }
