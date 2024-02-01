@@ -211,11 +211,11 @@ export default class MapfishPrintBaseEncoder {
         styleResolution: printResolution,
         canvasSize: canvasSize,
       };
-      const r = await encoder.encodeMVTLayer(printOptions);
-      return r
-        .filter((rr) => rr.baseURL.length > 6)
+      const results = await encoder.encodeMVTLayer(printOptions);
+      return results
+        .filter((resut) => resut.baseURL.length > 6)
         .map(
-          (rr) =>
+          (result) =>
             Object.assign(
               {
                 type: 'image',
@@ -223,7 +223,7 @@ export default class MapfishPrintBaseEncoder {
                 opacity: 1,
                 imageFormat: 'image/png',
               },
-              rr,
+              result,
             ) as MapFishPrintLayer,
         );
     }
