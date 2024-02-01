@@ -3,6 +3,9 @@
 /* global global */
 
 global.document = {
+  getElementById() {
+    return this.createElement();
+  },
   createTextNode() {},
   createElement() {
     return {
@@ -14,8 +17,12 @@ global.document = {
       appendChild() {
         // pass
       },
+      insertBefore() {},
       setAttribute() {
         // pass
+      },
+      getRootNode() {
+        return this;
       },
     };
   },
@@ -23,7 +30,11 @@ global.document = {
 
 global.window = {};
 
-global.ResizeObserver = class ResizeObserver {};
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+};
+
+global.ShadowRoot = class ShadowRoot {};
 
 global.getComputedStyle = () => {
   return {
@@ -31,3 +42,5 @@ global.getComputedStyle = () => {
     width: 42,
   };
 };
+
+global.requestAnimationFrame = () => {};
