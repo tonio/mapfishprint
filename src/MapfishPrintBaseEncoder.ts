@@ -1,6 +1,7 @@
 import {getWmtsMatrices, asOpacity, getWmtsUrl} from './mapfishprintUtils';
 import olLayerTile from 'ol/layer/Tile.js';
 import olSourceWMTS from 'ol/source/WMTS.js';
+import OSM from 'ol/source/OSM.js';
 import type {Transform} from 'ol/transform.js';
 import {
   create as createTransform,
@@ -14,11 +15,13 @@ import {
 import {getCenter as getExtentCenter} from 'ol/extent.js';
 import {transform2D} from 'ol/geom/flat/transform.js';
 
-import type BaseCustomizer from './BaseCustomizer';
+import BaseCustomizer from './BaseCustomizer';
 import type Map from 'ol/Map.js';
 import type {
+  MapFishPrintAttributes,
   MapFishPrintLayer,
   MapFishPrintMap,
+  MapFishPrintOSMLayer,
   MapFishPrintReportResponse,
   MapFishPrintSpec,
   MapFishPrintStatusResponse,
@@ -38,6 +41,25 @@ import {toContext} from 'ol/render.js';
 import VectorSource from 'ol/source/Vector.js';
 import {MVTEncoder} from '@geoblocks/print';
 
+interface CreateSpecOptions {
+  map: Map;
+  scale: number;
+  printResolution: number;
+  dpi: number;
+  layout: string;
+  format: 'pdf' | 'jpg' | 'png';
+  customAttributes: Record<string, any>;
+  customizer: BaseCustomizer;
+}
+
+interface EncodeMapOptions {
+  map: Map;
+  scale: number;
+  printResolution: number;
+  dpi: number;
+  customizer: BaseCustomizer;
+}
+
 export default class MapfishPrintBaseEncoder {
   readonly url: string;
   private scratchCanvas: HTMLCanvasElement = document.createElement('canvas');
@@ -51,32 +73,24 @@ export default class MapfishPrintBaseEncoder {
     this.url = printUrl;
   }
 
-  async createSpec(
-    map: Map,
-    scale: number,
-    printResolution: number,
-    dpi: number,
-    layout: string,
-    format: string,
-    customAttributes: Record<string, any>,
-    customizer: BaseCustomizer,
-  ): Promise<MapFishPrintSpec> {
-    const mapSpec = await this.encodeMap(
-      map,
-      scale,
-      printResolution,
-      dpi,
-      customizer,
-    );
-    const attributes = {
+  async createSpec(options: CreateSpecOptions): Promise<MapFishPrintSpec> {
+    const mapSpec = await this.encodeMap({
+      map: options.map,
+      scale: options.scale,
+      printResolution: options.printResolution,
+      dpi: options.dpi,
+      customizer: options.customizer,
+    });
+    const attributes: MapFishPrintAttributes = {
       map: mapSpec,
+      datasource: [],
     };
-    Object.assign(attributes, customAttributes);
+    Object.assign(attributes, options.customAttributes);
 
     return {
       attributes,
-      format,
-      layout,
+      format: options.format,
+      layout: options.layout,
     };
   }
 
@@ -147,26 +161,24 @@ export default class MapfishPrintBaseEncoder {
     return layers;
   }
 
-  async encodeMap(
-    map: Map,
-    scale: number,
-    printResolution: number,
-    dpi: number,
-    customizer: BaseCustomizer,
-  ): Promise<MapFishPrintMap> {
-    const view = map.getView();
+  async encodeMap(options: EncodeMapOptions): Promise<MapFishPrintMap> {
+    const view = options.map.getView();
     const center = view.getCenter();
     const projection = view.getProjection().getCode();
     const rotation = toDegrees(view.getRotation());
-    const layers = await this.mapToLayers(map, printResolution, customizer);
+    const layers = await this.mapToLayers(
+      options.map,
+      options.printResolution,
+      options.customizer,
+    );
 
     const spec = {
       center,
-      dpi,
+      dpi: options.dpi,
       pdfA: false,
       projection,
       rotation,
-      scale,
+      scale: options.scale,
       layers,
     } as MapFishPrintMap;
     return spec;
@@ -238,9 +250,25 @@ export default class MapfishPrintBaseEncoder {
     const source = layer.getSource();
     if (source instanceof olSourceWMTS) {
       return this.encodeTileWmtsLayer(layerState, customizer);
+    } else if (source instanceof OSM) {
+      return this.encodeOSMLayer(layerState, customizer);
     } else {
       return null;
     }
+  }
+
+  encodeOSMLayer(
+    layerState: State,
+    customizer: BaseCustomizer,
+  ): MapFishPrintOSMLayer {
+    const layer = layerState.layer;
+    const source = layer.getSource()! as OSM;
+    return {
+      type: 'osm',
+      baseURL: source.getUrls()[0],
+      opacity: layerState.opacity,
+      name: layer.get('name'),
+    };
   }
 
   encodeTileWmtsLayer(

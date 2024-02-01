@@ -108,6 +108,16 @@ export interface MapFishPrintWmtsLayer extends MapFishPrintLayer {
   version: string;
 }
 
+export interface MapFishPrintOSMLayer extends MapFishPrintLayer {
+  type: 'osm';
+  baseURL: string;
+  // dpi: number;
+  // customParams?: any[];
+  // imageExtension: string;
+  // layer: string;
+  // rasterStyle: string;
+}
+
 export interface MapFishPrintMap {
   box?: number[];
   center: number[];
@@ -121,6 +131,9 @@ export interface MapFishPrintMap {
 
 export interface MapFishPrintAttributes {
   map: MapFishPrintMap;
+  // FIXME: I don't know what to put here
+  // See http://mapfish.github.io/mapfish-print-doc/attributes.html#!datasource
+  datasource: any[];
 }
 
 export interface MapFishPrintSpec {

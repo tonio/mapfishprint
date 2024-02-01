@@ -8,7 +8,7 @@ import type {
   MapFishPrintWmtsLayer,
 } from './mapfishprintTypes';
 
-export default class {
+export default class BaseCustomizer {
   readonly printExtent: number[];
 
   constructor(printExtent: number[]) {
