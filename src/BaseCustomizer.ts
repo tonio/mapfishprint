@@ -25,21 +25,9 @@ export default class BaseCustomizer {
 
   feature(layerState: State, feature: GeoJSON.Feature) {}
 
-  line(
-    layerState: State,
-    symbolizer: MapFishPrintSymbolizerLine,
-    stroke: Stroke,
-  ) {}
+  line(layerState: State, symbolizer: MapFishPrintSymbolizerLine, stroke: Stroke) {}
 
-  point(
-    layerState: State,
-    symbolizer: MapFishPrintSymbolizerPoint,
-    image: Image,
-  ) {}
+  point(layerState: State, symbolizer: MapFishPrintSymbolizerPoint, image: Image) {}
 
-  wmtsLayer(
-    layerState: State,
-    wmtsLayer: MapFishPrintWmtsLayer,
-    source: WMTS,
-  ) {}
+  wmtsLayer(layerState: State, wmtsLayer: MapFishPrintWmtsLayer, source: WMTS) {}
 }

@@ -54,10 +54,7 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
       scaleDenominator: resolutionMeters / WMTS_PIXEL_SIZE_,
       tileSize: toSize(tileGrid.getTileSize(i)),
       topLeftCorner: tileGrid.getOrigin(i),
-      matrixSize: [
-        tileRange.maxX - tileRange.minX,
-        tileRange.maxY - tileRange.minY,
-      ],
+      matrixSize: [tileRange.maxX - tileRange.minX, tileRange.maxY - tileRange.minY],
     } as MapFishPrintWmtsMatrix);
   }
 
@@ -65,10 +62,7 @@ export function getWmtsMatrices(source: WMTS): MapFishPrintWmtsMatrix[] {
 }
 
 const scratchOpacityCanvas = document.createElement('canvas');
-export function asOpacity(
-  canvas: HTMLCanvasElement,
-  opacity: number,
-): HTMLCanvasElement {
+export function asOpacity(canvas: HTMLCanvasElement, opacity: number): HTMLCanvasElement {
   const ctx = scratchOpacityCanvas.getContext('2d')!;
   scratchOpacityCanvas.width = canvas.width;
   scratchOpacityCanvas.height = canvas.height;

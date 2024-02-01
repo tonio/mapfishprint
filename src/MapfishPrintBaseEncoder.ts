@@ -3,15 +3,9 @@ import olLayerTile from 'ol/layer/Tile.js';
 import olSourceWMTS from 'ol/source/WMTS.js';
 import OSM from 'ol/source/OSM.js';
 import type {Transform} from 'ol/transform.js';
-import {
-  create as createTransform,
-  compose as composeTransform,
-} from 'ol/transform.js';
+import {create as createTransform, compose as composeTransform} from 'ol/transform.js';
 import type {Extent} from 'ol/extent.js';
-import {
-  getWidth as getExtentWidth,
-  getHeight as getExtentHeight,
-} from 'ol/extent.js';
+import {getWidth as getExtentWidth, getHeight as getExtentHeight} from 'ol/extent.js';
 import {getCenter as getExtentCenter} from 'ol/extent.js';
 import {transform2D} from 'ol/geom/flat/transform.js';
 
@@ -98,9 +92,7 @@ export default class MapfishPrintBaseEncoder {
     return await (await fetch(`${this.url}/status/${ref}.json`)).json();
   }
 
-  async requestReport(
-    spec: MapFishPrintSpec,
-  ): Promise<MapFishPrintReportResponse> {
+  async requestReport(spec: MapFishPrintSpec): Promise<MapFishPrintReportResponse> {
     const report = await fetch(`${this.url}/report.${spec.format}`, {
       method: 'POST',
       headers: {
@@ -113,10 +105,7 @@ export default class MapfishPrintBaseEncoder {
 
   // FIXME: add timeout
   // FIXME: handle errors
-  getDownloadUrl(
-    response: MapFishPrintReportResponse,
-    interval = 1000,
-  ): Promise<string> {
+  getDownloadUrl(response: MapFishPrintReportResponse, interval = 1000): Promise<string> {
     return new Promise((resolve, reject) => {
       const intervalId = setInterval(async () => {
         const status = await this.getStatus(response.ref);
@@ -145,11 +134,7 @@ export default class MapfishPrintBaseEncoder {
     const layers: MapFishPrintLayer[] = [];
     for (const layerState of layerStates) {
       console.assert(printResolution !== undefined);
-      const spec = await this.encodeLayer(
-        layerState,
-        printResolution,
-        customizer,
-      );
+      const spec = await this.encodeLayer(layerState, printResolution, customizer);
       if (spec) {
         if (Array.isArray(spec)) {
           layers.push(...spec);
@@ -166,11 +151,7 @@ export default class MapfishPrintBaseEncoder {
     const center = view.getCenter();
     const projection = view.getProjection().getCode();
     const rotation = toDegrees(view.getRotation());
-    const layers = await this.mapToLayers(
-      options.map,
-      options.printResolution,
-      options.customizer,
-    );
+    const layers = await this.mapToLayers(options.map, options.printResolution, options.customizer);
 
     const spec = {
       center,
@@ -230,10 +211,7 @@ export default class MapfishPrintBaseEncoder {
     if (layer instanceof olLayerTile) {
       return this.encodeTileLayer(layerState, customizer);
     } else if (layer instanceof VectorLayer) {
-      const encoded = new VectorEncoder(
-        layerState,
-        customizer,
-      ).encodeVectorLayer(printResolution)!;
+      const encoded = new VectorEncoder(layerState, customizer).encodeVectorLayer(printResolution)!;
       const renderAsSvg = layer.get('renderAsSvg');
       if (renderAsSvg !== undefined) {
         encoded.renderAsSvg = renderAsSvg;
@@ -257,10 +235,7 @@ export default class MapfishPrintBaseEncoder {
     }
   }
 
-  encodeOSMLayer(
-    layerState: State,
-    customizer: BaseCustomizer,
-  ): MapFishPrintOSMLayer {
+  encodeOSMLayer(layerState: State, customizer: BaseCustomizer): MapFishPrintOSMLayer {
     const layer = layerState.layer;
     const source = layer.getSource()! as OSM;
     return {
@@ -271,10 +246,7 @@ export default class MapfishPrintBaseEncoder {
     };
   }
 
-  encodeTileWmtsLayer(
-    layerState: State,
-    customizer: BaseCustomizer,
-  ): MapFishPrintWmtsLayer {
+  encodeTileWmtsLayer(layerState: State, customizer: BaseCustomizer): MapFishPrintWmtsLayer {
     const layer = layerState.layer;
     console.assert(layer instanceof olLayerTile);
     const source = layer.getSource()! as WMTS;
@@ -346,11 +318,7 @@ export default class MapfishPrintBaseEncoder {
     });
   }
 
-  createCoordinateToPixelTransform(
-    printExtent: Extent,
-    resolution: number,
-    size: number[],
-  ): Transform {
+  createCoordinateToPixelTransform(printExtent: Extent, resolution: number, size: number[]): Transform {
     const coordinateToPixelTransform = createTransform();
     const center = getExtentCenter(printExtent);
     // See VectorImageLayer
@@ -368,11 +336,7 @@ export default class MapfishPrintBaseEncoder {
     return coordinateToPixelTransform;
   }
 
-  async encodeAsImageLayer(
-    layerState: State,
-    resolution: number,
-    customizer: BaseCustomizer,
-  ) {
+  async encodeAsImageLayer(layerState: State, resolution: number, customizer: BaseCustomizer) {
     const layer = layerState.layer as VectorLayer<VectorSource>;
     const printExtent = customizer.printExtent;
     const width = getExtentWidth(printExtent) / resolution;
@@ -382,11 +346,7 @@ export default class MapfishPrintBaseEncoder {
       size,
       pixelRatio: 1,
     });
-    const coordinateToPixelTransform = this.createCoordinateToPixelTransform(
-      printExtent,
-      resolution,
-      size,
-    );
+    const coordinateToPixelTransform = this.createCoordinateToPixelTransform(printExtent, resolution, size);
     const features = layer.getSource()!.getFeatures();
     const styleFunction = layer.getStyleFunction();
     const additionalDraw = (geometry: Polygon | MultiPolygon) => {};
@@ -406,9 +366,7 @@ export default class MapfishPrintBaseEncoder {
       imageFormat: 'image/png', // this is the target image format in the mapfish-print
       opacity: 1, // FIXME: mapfish-print is not handling the opacity correctly for images with dataurl.
       name: layer.get('name'),
-      baseURL: asOpacity(this.scratchCanvas, layer.getOpacity()).toDataURL(
-        'PNG',
-      ),
+      baseURL: asOpacity(this.scratchCanvas, layer.getOpacity()).toDataURL('PNG'),
     };
   }
 }
