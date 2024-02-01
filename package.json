@@ -21,7 +21,7 @@
     "prettier-fix": "prettier -w src *.js",
     "prepare": "tsc --pretty && node node_modules/@geoblocks/recast-utils/fix_paths lib",
     "typecheck": "tsc --pretty --noEmit",
-    "run-demo": "npm run prepare && python3 -m http.server --directory demo 12345"
+    "start": "npm run prepare && python3 -m http.server --directory demo 12345"
   },
   "dependencies": {
     "@babel/parser": "^7.23.9"
