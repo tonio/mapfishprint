@@ -28,7 +28,6 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorEncoder from './VectorEncoder';
 import {toContext} from 'ol/render.js';
 import VectorSource from 'ol/source/Vector.js';
-import {MVTEncoder} from '@geoblocks/print';
 import LayerGroup from 'ol/layer/Group';
 import VectorContext from 'ol/render/VectorContext';
 
@@ -172,7 +171,7 @@ export default class MFPBaseEncoder {
     const layer = layerState.layer;
 
     if (layer instanceof VectorTileLayer) {
-      return this.encodeMVTLayerState(layerState, printResolution, customizer);
+      return await this.encodeMVTLayerState(layerState, printResolution, customizer);
     }
 
     if (layer instanceof TileLayer) {
@@ -202,6 +201,7 @@ export default class MFPBaseEncoder {
     customizer: BaseCustomizer,
   ): Promise<MFPLayer[] | MFPLayer | null> {
     const layer = layerState.layer as VectorTileLayer;
+    const {MVTEncoder} = await import('@geoblocks/print');
     const encoder = new MVTEncoder();
     const printExtent = customizer.printExtent;
     const width = getExtentWidth(printExtent) / printResolution;
