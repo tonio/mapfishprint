@@ -20,7 +20,7 @@ import type {
 } from './types';
 import type WMTS from 'ol/source/WMTS.js';
 
-import type {MultiPolygon, Polygon} from 'ol/geom.js';
+import type {Geometry} from 'ol/geom.js';
 import type {State} from 'ol/layer/Layer.js';
 import {toDegrees} from 'ol/math.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
@@ -30,8 +30,9 @@ import {toContext} from 'ol/render.js';
 import VectorSource from 'ol/source/Vector.js';
 import {MVTEncoder} from '@geoblocks/print';
 import LayerGroup from 'ol/layer/Group';
+import VectorContext from 'ol/render/VectorContext';
 
-interface CreateSpecOptions {
+export interface CreateSpecOptions {
   map: Map;
   scale: number;
   printResolution: number;
@@ -42,7 +43,7 @@ interface CreateSpecOptions {
   customizer: BaseCustomizer;
 }
 
-interface EncodeMapOptions {
+export interface EncodeMapOptions {
   map: Map;
   scale: number;
   printResolution: number;
@@ -171,34 +172,9 @@ export default class MFPBaseEncoder {
     const layer = layerState.layer;
 
     if (layer instanceof VectorTileLayer) {
-      const encoder = new MVTEncoder();
-      const printExtent = customizer.printExtent;
-      const width = getExtentWidth(printExtent) / printResolution;
-      const height = getExtentHeight(printExtent) / printResolution;
-      const canvasSize: [number, number] = [width, height];
-      const printOptions = {
-        layer,
-        printExtent: customizer.printExtent,
-        tileResolution: printResolution,
-        styleResolution: printResolution,
-        canvasSize: canvasSize,
-      };
-      const results = await encoder.encodeMVTLayer(printOptions);
-      return results
-        .filter((resut) => resut.baseURL.length > 6)
-        .map(
-          (result) =>
-            Object.assign(
-              {
-                type: 'image',
-                name: layer.get('name'),
-                opacity: 1,
-                imageFormat: 'image/png',
-              },
-              result,
-            ) as MFPLayer,
-        );
+      return this.encodeMVTLayerState(layerState, printResolution, customizer);
     }
+
     if (layer instanceof TileLayer) {
       return this.encodeTileLayerState(layerState, customizer);
     } else if (layer instanceof VectorLayer) {
@@ -208,9 +184,51 @@ export default class MFPBaseEncoder {
         encoded.renderAsSvg = renderAsSvg;
       }
       return encoded;
-    } else {
-      return null;
     }
+
+    return null;
+  }
+
+  /**
+   *
+   * @param layerState An MVT layer state
+   * @param printResolution
+   * @param customizer
+   * @return a spec fragment
+   */
+  async encodeMVTLayerState(
+    layerState: State,
+    printResolution: number,
+    customizer: BaseCustomizer,
+  ): Promise<MFPLayer[] | MFPLayer | null> {
+    const layer = layerState.layer as VectorTileLayer;
+    const encoder = new MVTEncoder();
+    const printExtent = customizer.printExtent;
+    const width = getExtentWidth(printExtent) / printResolution;
+    const height = getExtentHeight(printExtent) / printResolution;
+    const canvasSize: [number, number] = [width, height];
+    const printOptions = {
+      layer,
+      printExtent: customizer.printExtent,
+      tileResolution: printResolution,
+      styleResolution: printResolution,
+      canvasSize: canvasSize,
+    };
+    const results = await encoder.encodeMVTLayer(printOptions);
+    return results
+      .filter((resut) => resut.baseURL.length > 6)
+      .map(
+        (result) =>
+          Object.assign(
+            {
+              type: 'image',
+              name: layer.get('name'),
+              opacity: 1,
+              imageFormat: 'image/png',
+            },
+            result,
+          ) as MFPLayer,
+      );
   }
 
   /**
@@ -294,20 +312,20 @@ export default class MFPBaseEncoder {
     layerState: State,
     resolution: number,
     customizer: BaseCustomizer,
+    additionalDraw: (cir: VectorContext, geometry: Geometry) => void,
   ): Promise<MFPImageLayer> {
     const layer = layerState.layer as VectorLayer<VectorSource>;
     const printExtent = customizer.printExtent;
     const width = getExtentWidth(printExtent) / resolution;
     const height = getExtentHeight(printExtent) / resolution;
     const size: [number, number] = [width, height];
-    const vectorContext = toContext(this.scratchCanvas.getContext('2d')!, {
+    const vectorContext: VectorContext = toContext(this.scratchCanvas.getContext('2d')!, {
       size,
       pixelRatio: 1,
     });
     const coordinateToPixelTransform = createCoordinateToPixelTransform(printExtent, resolution, size);
     const features = layer.getSource()!.getFeatures();
     const styleFunction = layer.getStyleFunction();
-    const additionalDraw = (geometry: Polygon | MultiPolygon) => {};
 
     drawFeaturesToContext(
       features,
@@ -315,7 +333,7 @@ export default class MFPBaseEncoder {
       resolution,
       coordinateToPixelTransform,
       vectorContext,
-      additionalDraw as any,
+      additionalDraw,
     );
 
     const spec: MFPImageLayer = {

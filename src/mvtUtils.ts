@@ -1,5 +1,5 @@
-import type {Extent} from 'ol/extent';
-import {Transform} from 'ol/transform';
+import type {Extent} from 'ol/extent.js';
+import {Transform} from 'ol/transform.js';
 import {create as createTransform, compose as composeTransform} from 'ol/transform.js';
 import {getCenter as getExtentCenter} from 'ol/extent.js';
 
@@ -27,7 +27,7 @@ export function drawFeaturesToContext(
   resolution: number,
   coordinateToPixelTransform: Transform,
   vectorContext: VectorContext,
-  additionalDraw: (geometry: Geometry) => void,
+  additionalDraw: (cir: VectorContext, geometry: Geometry) => void,
 ): void {
   if (!styleFunction) {
     return;
@@ -59,7 +59,7 @@ export function drawFeaturesToContext(
         vectorContext.setStyle(styles);
         vectorContext.drawGeometry(geometry);
       }
-      additionalDraw(geometry);
+      if (additionalDraw) additionalDraw(vectorContext, geometry);
     }
   });
 }
