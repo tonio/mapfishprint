@@ -24,23 +24,23 @@
     "start": "npm run prepare && python3 -m http.server --directory demo 12345",
     "doc": "typedoc --name 'Mapfish Print geoblock' --includeVersion --emit docs --excludeExternals --entryPointStrategy expand ./src"
   },
-  "dependencies": {
-    "@babel/parser": "^7.23.9"
+  "optionalDependencies": {
+    "@geoblocks/print": "0.7"
   },
   "peerDependencies": {
     "ol": "6 || 7 || 8"
   },
   "devDependencies": {
-    "@geoblocks/print": "^0.7.4",
-    "@geoblocks/recast-utils": "^0.1.0",
+    "@geoblocks/print": "0.7.4",
+    "@geoblocks/recast-utils": "0.1.0",
     "@types/geojson": "7946.0.10",
     "@typescript-eslint/eslint-plugin": "6.20.0",
     "eslint": "8.56.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.1.3",
-    "gh-pages": "^6.1.1",
+    "gh-pages": "6.1.1",
     "prettier": "3.2.4",
-    "typedoc": "^0.25.7",
+    "typedoc": "0.25.7",
     "typescript": "5.3.3"
   }
 }
