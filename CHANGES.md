@@ -1,6 +1,7 @@
 # @geoblocks/geoblocks changes
 
 ## 0.2.3
+- Add utility functions.
 - In `BaseCustomizer`, the printExtent can be now set and get/set are dedicated methods.
 - `pdfA` (allow transparency) is now a spec.map optional param.
 - spec.attributes are now partial and `datasources` attribute is removed.

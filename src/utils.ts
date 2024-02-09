@@ -2,9 +2,26 @@ import WMTSTileGrid from 'ol/tilegrid/WMTS.js';
 import {toSize} from 'ol/size.js';
 import type {MFPReportResponse, MFPSpec, MFPStatusResponse, MFPWmtsMatrix} from './types';
 import type {WMTS} from 'ol/source.js';
+import type {Extent} from 'ol/extent';
+import {Constants, CalculatedConstants} from './constants';
 
-// "Standardized rendering pixel size" is defined as 0.28 mm, see http://www.opengeospatial.org/standards/wmts
-const WMTS_PIXEL_SIZE_ = 0.28e-3;
+/**
+ * @param mapPageSize The page size (width, height)
+ * @param center The coordinate of the extent's center.
+ * @param scale The scale to calculate the extent width.
+ * @returns an extent that fit the page size. Calculated with POINTS_PER_DISTANCE_UNIT (by default using meters)
+ */
+export function getPrintExtent(mapPageSize: number[], center: number[], scale: number): Extent {
+  const [mapPageWidthMeters, mapPageHeightMeters] = mapPageSize.map(
+    (side) => ((side / CalculatedConstants.POINTS_PER_DISTANCE_UNIT()) * scale) / 2,
+  );
+  return [
+    center[0] - mapPageWidthMeters,
+    center[1] - mapPageHeightMeters,
+    center[0] + mapPageWidthMeters,
+    center[1] + mapPageHeightMeters,
+  ];
+}
 
 /**
  * Takes a hex value and prepends a zero if it's a single digit.
@@ -51,7 +68,7 @@ export function getWmtsMatrices(source: WMTS): MFPWmtsMatrix[] {
     const resolutionMeters = tileGrid.getResolution(i) * metersPerUnit;
     wmtsMatrices.push({
       identifier: matrixIds[i],
-      scaleDenominator: resolutionMeters / WMTS_PIXEL_SIZE_,
+      scaleDenominator: resolutionMeters / Constants.WMTS_PIXEL_SIZE,
       tileSize: toSize(tileGrid.getTileSize(i)),
       topLeftCorner: tileGrid.getOrigin(i),
       matrixSize: [tileRange.maxX - tileRange.minX, tileRange.maxY - tileRange.minY],
