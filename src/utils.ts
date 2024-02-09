@@ -6,14 +6,14 @@ import type {Extent} from 'ol/extent';
 import {Constants, CalculatedConstants} from './constants';
 
 /**
- * @param mapPageSize The page size (width, height)
+ * @param mapPageSize The page size in pixels (width, height)
  * @param center The coordinate of the extent's center.
  * @param scale The scale to calculate the extent width.
- * @returns an extent that fit the page size. Calculated with POINTS_PER_DISTANCE_UNIT (by default using meters)
+ * @returns an extent that fit the page size. Calculated with DPI_PER_DISTANCE_UNIT (by default using meters)
  */
 export function getPrintExtent(mapPageSize: number[], center: number[], scale: number): Extent {
   const [mapPageWidthMeters, mapPageHeightMeters] = mapPageSize.map(
-    (side) => ((side / CalculatedConstants.POINTS_PER_DISTANCE_UNIT()) * scale) / 2,
+    (side) => ((side / CalculatedConstants.DPI_PER_DISTANCE_UNIT()) * scale) / 2,
   );
   return [
     center[0] - mapPageWidthMeters,
@@ -118,19 +118,39 @@ export async function requestReport(mfpBaseUrl: string, spec: MFPSpec): Promise<
   return await report.json();
 }
 
-// FIXME: add timeout
-// FIXME: handle errors
+/**
+ * @param requestReport the name of the requested report
+ * @param response The initial print response.
+ * @param interval (s) the internal to poll the download url.
+ * @param timeout (s) A timeout for this operation.
+ * @returns a Promise with the download url once the document is printed or an error.
+ */
 export async function getDownloadUrl(
   requestReport: string,
   response: MFPReportResponse,
   interval = 1000,
+  timeout = 30000,
 ): Promise<string> {
+  let totalDuration = 0 - interval;
   return new Promise((resolve, reject) => {
     const intervalId = setInterval(async () => {
-      const status = await getStatus(requestReport, response.ref);
+      let status: MFPStatusResponse | undefined;
+      try {
+        status = await getStatus(requestReport, response.ref);
+        if (status.error) {
+          throw new Error(status.error);
+        }
+      } catch (error) {
+        reject(error);
+      }
       if (status.done) {
         clearInterval(intervalId);
         resolve(`${requestReport}/report/${response.ref}`);
+      }
+      totalDuration += interval;
+      if (totalDuration >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error('Print duration exceeded'));
       }
     }, interval);
   });

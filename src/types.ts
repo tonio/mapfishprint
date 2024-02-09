@@ -149,6 +149,7 @@ export interface MFPStatusResponse {
   done: boolean;
   downloadURL: string;
   elapsedTime: number;
+  error?: string;
   status: string;
   waitingTime: number;
 }
