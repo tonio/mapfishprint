@@ -37,7 +37,7 @@ export interface CreateSpecOptions {
   printResolution: number;
   dpi: number;
   layout: string;
-  format: 'pdf' | 'jpg' | 'png';
+  format: string;
   customAttributes: Record<string, any>;
   customizer: BaseCustomizer;
 }
@@ -80,7 +80,6 @@ export default class MFPBaseEncoder {
     });
     const attributes: MFPAttributes = {
       map: mapSpec,
-      datasource: [],
     };
     Object.assign(attributes, options.customAttributes);
 
@@ -104,16 +103,14 @@ export default class MFPBaseEncoder {
     const mapLayerGroup = options.map.getLayerGroup();
     const layers = await this.encodeLayerGroup(mapLayerGroup, options.printResolution, options.customizer);
 
-    const spec = {
+    return {
       center,
       dpi: options.dpi,
-      pdfA: false,
       projection,
       rotation,
       scale: options.scale,
       layers,
-    } as MFPMap;
-    return spec;
+    };
   }
 
   /**
@@ -203,13 +200,13 @@ export default class MFPBaseEncoder {
     const layer = layerState.layer as VectorTileLayer;
     const {MVTEncoder} = await import('@geoblocks/print');
     const encoder = new MVTEncoder();
-    const printExtent = customizer.printExtent;
+    const printExtent = customizer.getPrintExtent();
     const width = getExtentWidth(printExtent) / printResolution;
     const height = getExtentHeight(printExtent) / printResolution;
     const canvasSize: [number, number] = [width, height];
     const printOptions = {
       layer,
-      printExtent: customizer.printExtent,
+      printExtent: customizer.getPrintExtent(),
       tileResolution: printResolution,
       styleResolution: printResolution,
       canvasSize: canvasSize,
@@ -315,7 +312,7 @@ export default class MFPBaseEncoder {
     additionalDraw: (cir: VectorContext, geometry: Geometry) => void,
   ): Promise<MFPImageLayer> {
     const layer = layerState.layer as VectorLayer<VectorSource>;
-    const printExtent = customizer.printExtent;
+    const printExtent = customizer.getPrintExtent();
     const width = getExtentWidth(printExtent) / resolution;
     const height = getExtentHeight(printExtent) / resolution;
     const size: [number, number] = [width, height];

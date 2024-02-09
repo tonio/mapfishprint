@@ -30,12 +30,10 @@ test('Empty map', async (t) => {
   });
   assert.deepEqual(result, {
     attributes: {
-      datasource: [],
       map: {
         center: [796612.417322277, 5836960.776101627],
         dpi: 300,
         layers: [],
-        pdfA: false,
         projection: 'EPSG:3857',
         rotation: 0,
         scale: 1,
@@ -78,7 +76,6 @@ test('OSM map', async (t) => {
 
   assert.deepEqual(spec, {
     attributes: {
-      datasource: [],
       map: {
         center: [796612.417322277, 5836960.776101627],
         dpi: 254,
@@ -90,7 +87,6 @@ test('OSM map', async (t) => {
             type: 'osm',
           },
         ],
-        pdfA: false,
         projection: 'EPSG:3857',
         rotation: 0,
         scale: 1,
