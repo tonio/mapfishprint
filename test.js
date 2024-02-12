@@ -25,21 +25,20 @@ test('Empty map', async (t) => {
     dpi: 300,
     layout: 'landscape_a4',
     format: 'pdf',
-    customAttributes: {},
+    customAttributes: {title: 'My title'},
     customizer: customizer,
   });
   assert.deepEqual(result, {
     attributes: {
-      datasource: [],
       map: {
         center: [796612.417322277, 5836960.776101627],
         dpi: 300,
         layers: [],
-        pdfA: false,
         projection: 'EPSG:3857',
         rotation: 0,
         scale: 1,
       },
+      title: 'My title',
     },
     format: 'pdf',
     layout: 'landscape_a4',
@@ -47,7 +46,7 @@ test('Empty map', async (t) => {
 });
 
 test('OSM map', async (t) => {
-  const MFP_URL = 'https://geomapfish-demo-2-5.camptocamp.com/printproxy';
+  const MFP_URL = 'https://geomapfish-demo-2-8.camptocamp.com/printproxy';
   const layout = '1 A4 portrait'; // better take from MFP
   const map = new Map({
     target: 'map',
@@ -78,7 +77,6 @@ test('OSM map', async (t) => {
 
   assert.deepEqual(spec, {
     attributes: {
-      datasource: [],
       map: {
         center: [796612.417322277, 5836960.776101627],
         dpi: 254,
@@ -90,7 +88,6 @@ test('OSM map', async (t) => {
             type: 'osm',
           },
         ],
-        pdfA: false,
         projection: 'EPSG:3857',
         rotation: 0,
         scale: 1,

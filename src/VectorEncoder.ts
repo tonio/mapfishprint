@@ -81,7 +81,7 @@ export default class VectorEncoder {
     }
     console.assert(source instanceof VectorSource);
 
-    const features = source.getFeaturesInExtent(this.customizer_.printExtent);
+    const features = source.getFeaturesInExtent(this.customizer_.getPrintExtent());
 
     const geojsonFeatures: GeoJSONFeature[] = [];
     const mapfishStyleObject: MFPVectorStyle = {

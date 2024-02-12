@@ -34,7 +34,7 @@ document.querySelector('#print').addEventListener('click', async () => {
     dpi: 254,
     layout: layout,
     format: 'pdf',
-    customAttributes: {},
+    customAttributes: {datasource: []},
     customizer: customizer,
   });
 
@@ -54,10 +54,10 @@ document.querySelector('#print').addEventListener('click', async () => {
       document.location = url;
       return url;
     },
-    (err) => {
-      console.log('result', 'error', err);
-      resultEl.innerHTML = 'Error';
-      return err;
+    (error) => {
+      console.log('result', 'error', error);
+      resultEl.innerHTML = error;
+      return error;
     },
   );
 });

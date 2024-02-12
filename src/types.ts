@@ -124,17 +124,16 @@ export interface MFPMap {
   projection: string;
   rotation: number;
   useNearestScale?: boolean;
+  /* Allow transparency property. Default to false */
+  pdfA?: boolean;
 }
 
 export interface MFPAttributes {
   map: MFPMap;
-  // FIXME: I don't know what to put here
-  // See http://mapfish.github.io/mapfish-print-doc/attributes.html#!datasource
-  datasource: any[];
 }
 
 export interface MFPSpec {
-  attributes: MFPAttributes;
+  attributes: Partial<MFPAttributes>;
   layout: string;
   format: string;
   smtp?: Record<string, string>;
@@ -150,6 +149,7 @@ export interface MFPStatusResponse {
   done: boolean;
   downloadURL: string;
   elapsedTime: number;
+  error?: string;
   status: string;
   waitingTime: number;
 }
