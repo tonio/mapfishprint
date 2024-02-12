@@ -9,15 +9,7 @@ import {getWidth as getExtentWidth, getHeight as getExtentHeight} from 'ol/exten
 
 import BaseCustomizer from './BaseCustomizer';
 import type Map from 'ol/Map.js';
-import type {
-  MFPAttributes,
-  MFPImageLayer,
-  MFPLayer,
-  MFPMap,
-  MFPOSMLayer,
-  MFPSpec,
-  MFPWmtsLayer,
-} from './types';
+import type {MFPImageLayer, MFPLayer, MFPMap, MFPOSMLayer, MFPWmtsLayer} from './types';
 import type WMTS from 'ol/source/WMTS.js';
 
 import type {Geometry} from 'ol/geom.js';
@@ -30,17 +22,6 @@ import {toContext} from 'ol/render.js';
 import VectorSource from 'ol/source/Vector.js';
 import LayerGroup from 'ol/layer/Group';
 import VectorContext from 'ol/render/VectorContext';
-
-export interface CreateSpecOptions {
-  map: Map;
-  scale: number;
-  printResolution: number;
-  dpi: number;
-  layout: string;
-  format: string;
-  customAttributes: Record<string, any>;
-  customizer: BaseCustomizer;
-}
 
 export interface EncodeMapOptions {
   map: Map;
@@ -63,31 +44,6 @@ export default class MFPBaseEncoder {
    */
   constructor(printUrl: string) {
     this.url = printUrl;
-  }
-
-  /**
-   * Introspect the map and convert each of its layers to Mapfish print v3 format.
-   * @param options
-   * @return a top level Mapfish print spec
-   */
-  async createSpec(options: CreateSpecOptions): Promise<MFPSpec> {
-    const mapSpec = await this.encodeMap({
-      map: options.map,
-      scale: options.scale,
-      printResolution: options.printResolution,
-      dpi: options.dpi,
-      customizer: options.customizer,
-    });
-    const attributes: MFPAttributes = {
-      map: mapSpec,
-    };
-    Object.assign(attributes, options.customAttributes);
-
-    return {
-      attributes,
-      format: options.format,
-      layout: options.layout,
-    };
   }
 
   /**
