@@ -27,16 +27,28 @@ document.querySelector('#print').addEventListener('click', async () => {
   specEl.innerHTML = reportEl.innerHTML = resultEl.innerHTML = '';
   const encoder = new MFPEncoder(MFP_URL);
   const customizer = new BaseCustomizer([0, 0, 10000, 10000]);
-  const spec = await encoder.createSpec({
+  /**
+   * @type {MFPMap}
+   */
+  const mapSpec = await encoder.encodeMap({
     map,
     scale: 1,
     printResolution: 96,
     dpi: 254,
-    layout: layout,
-    format: 'pdf',
-    customAttributes: {datasource: []},
     customizer: customizer,
   });
+
+  /**
+   * @type {MFPSpec}
+   */
+  const spec = {
+    attributes: {
+      map: mapSpec,
+      datasource: [],
+    },
+    format: 'pdf',
+    layout: layout,
+  };
 
   // This is just a quick demo
   // Note that using innerHTML is not a good idea in production code...
