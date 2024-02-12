@@ -1,5 +1,8 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.4
+- Move createReport to utils.
+
 ## 0.2.3
 - Add utility functions.
 - In `BaseCustomizer`, the printExtent can be now set and get/set are dedicated methods.
