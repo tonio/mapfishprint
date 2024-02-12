@@ -32,8 +32,8 @@ document.querySelector('#print').addEventListener('click', async () => {
    */
   const mapSpec = await encoder.encodeMap({
     map,
-    scale: 1,
-    printResolution: 96,
+    scale: 10000,
+    printResolution: map.getView().getResolution(),
     dpi: 254,
     customizer: customizer,
   });

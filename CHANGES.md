@@ -2,6 +2,7 @@
 
 ## 0.2.4
 - Move createReport to utils.
+- Add **raw** encode support for WMS and Tile WMS layers.
 
 ## 0.2.3
 - Add utility functions.

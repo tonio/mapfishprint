@@ -3,17 +3,19 @@ import {drawFeaturesToContext, createCoordinateToPixelTransform} from './mvtUtil
 
 import TileLayer from 'ol/layer/Tile.js';
 import WMTSSource from 'ol/source/WMTS.js';
+import TileWMSSource from 'ol/source/TileWMS.js';
 import OSMSource from 'ol/source/OSM.js';
 
 import {getWidth as getExtentWidth, getHeight as getExtentHeight} from 'ol/extent.js';
 
 import BaseCustomizer from './BaseCustomizer';
 import type Map from 'ol/Map.js';
-import type {MFPImageLayer, MFPLayer, MFPMap, MFPOSMLayer, MFPWmtsLayer} from './types';
+import type {MFPImageLayer, MFPLayer, MFPMap, MFPOSMLayer, MFPWmtsLayer, MFPWmsLayer} from './types';
 import type WMTS from 'ol/source/WMTS.js';
-
 import type {Geometry} from 'ol/geom.js';
 import type {State} from 'ol/layer/Layer.js';
+import ImageLayer from 'ol/layer/Image.js';
+import ImageWMSSource from 'ol/source/ImageWMS.js';
 import {toDegrees} from 'ol/math.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
 import VectorLayer from 'ol/layer/Vector.js';
@@ -89,7 +91,6 @@ export default class MFPBaseEncoder {
 
     const layers: MFPLayer[] = [];
     for (const layerState of layerStates) {
-      console.assert(printResolution !== undefined);
       const spec = await this.encodeLayerState(layerState, printResolution, customizer);
       if (spec) {
         if (Array.isArray(spec)) {
@@ -123,26 +124,172 @@ export default class MFPBaseEncoder {
     }
     const layer = layerState.layer;
 
-    if (layer instanceof VectorTileLayer) {
-      return await this.encodeMVTLayerState(layerState, printResolution, customizer);
+    if (layer instanceof ImageLayer) {
+      return this.encodeImageLayerState(layerState, customizer);
     }
 
-    if (layer instanceof TileLayer) {
-      return this.encodeTileLayerState(layerState, customizer);
-    } else if (layer instanceof VectorLayer) {
+    if (layer instanceof VectorLayer) {
       const encoded = new VectorEncoder(layerState, customizer).encodeVectorLayer(printResolution)!;
-      const renderAsSvg = layer.get('renderAsSvg');
+      const renderAsSvg = layerState.layer.get('renderAsSvg');
       if (renderAsSvg !== undefined) {
         encoded.renderAsSvg = renderAsSvg;
       }
       return encoded;
     }
 
+    if (layer instanceof TileLayer) {
+      return this.encodeTileLayerState(layerState, customizer);
+    }
+
+    if (layer instanceof VectorTileLayer) {
+      return await this.encodeMVTLayerState(layerState, printResolution, customizer);
+    }
+
     return null;
   }
 
   /**
-   *
+   * @returns An Encoded WMS Image layer from an Image Layer (high level method).
+   */
+  encodeImageLayerState(layerState: State, customizer: BaseCustomizer): MFPWmsLayer | null {
+    const layer = layerState.layer;
+    if (!(layer instanceof ImageLayer)) {
+      console.assert(layer instanceof ImageLayer);
+    }
+    const source = layer.getSource();
+    if (source instanceof ImageWMSSource) {
+      return this.encodeImageWmsLayerState(layerState, customizer);
+    }
+    return null;
+  }
+
+  /**
+   * @returns An Encoded WMS Image layer from an Image WMS Source (high level method).
+   */
+  encodeImageWmsLayerState(layerState: State, customizer: BaseCustomizer) {
+    const layer = layerState.layer;
+    const source = layer.getSource() as ImageWMSSource;
+    console.assert(layer instanceof ImageWMSSource);
+    const url = source.getUrl();
+    if (url !== undefined) {
+      return this.encodeWmsLayerState(layerState, url, source.getParams(), customizer);
+    }
+    return null;
+  }
+
+  /**
+   * @returns An Encoded WMS Image layer from an Image WMS Source.
+   */
+  encodeWmsLayerState(layerState: State, url: string, params: any, customizer: BaseCustomizer): MFPWmsLayer {
+    const layer = layerState.layer;
+    return {
+      name: layer.get('name'),
+      baseURL: url,
+      imageFormat: 'image/png',
+      layers: [''],
+      customParams: {},
+      serverType: 'mapserver',
+      type: 'wms',
+      opacity: layer.getOpacity(),
+      version: params.VERSION,
+      useNativeAngle: true,
+      styles: [''],
+    };
+  }
+
+  /**
+   * Encodes a tile layerState (high level method)
+   * @param layerState
+   * @param customizer
+   * @return a spec fragment
+   */
+  encodeTileLayerState(
+    layerState: State,
+    customizer: BaseCustomizer,
+  ): MFPOSMLayer | MFPWmtsLayer | MFPWmsLayer | null {
+    const layer = layerState.layer;
+    console.assert(layer instanceof TileLayer);
+    const source = layer.getSource();
+    if (source instanceof WMTSSource) {
+      return this.encodeTileWmtsLayerState(layerState, customizer);
+    }
+    if (source instanceof TileWMSSource) {
+      return this.encodeTileWmsLayerState(layerState, customizer);
+    }
+    if (source instanceof OSMSource) {
+      return this.encodeOSMLayerState(layerState, customizer);
+    }
+    return null;
+  }
+
+  /**
+   * Encodes a tiled WMS layerState as a MFPWmsLayer
+   * @param layerState
+   * @param customizer
+   * @return a spec fragment
+   */
+  encodeTileWmsLayerState(layerState: State, customizer: BaseCustomizer): MFPWmsLayer {
+    const layer = layerState.layer;
+    console.assert(layer instanceof TileLayer);
+    const source = layer.getSource() as TileWMSSource;
+    console.assert(layer instanceof TileWMSSource);
+    const urls = source.getUrls();
+    console.assert(!!urls);
+    return this.encodeWmsLayerState(layerState, urls[0], source.getParams(), customizer);
+  }
+
+  /**
+   * Encodes an OSM layerState
+   * @param layerState
+   * @param customizer
+   * @return a spec fragment
+   */
+  encodeOSMLayerState(layerState: State, customizer: BaseCustomizer): MFPOSMLayer {
+    const layer = layerState.layer;
+    const source = layer.getSource()! as OSMSource;
+    return {
+      type: 'osm',
+      baseURL: source.getUrls()[0],
+      opacity: layerState.opacity,
+      name: layer.get('name'),
+    };
+  }
+
+  /**
+   * Encodes a WMTS layerState
+   * @param layerState
+   * @param customizer
+   * @return a spec fragment
+   */
+  encodeTileWmtsLayerState(layerState: State, customizer: BaseCustomizer): MFPWmtsLayer {
+    const layer = layerState.layer;
+    console.assert(layer instanceof TileLayer);
+    const source = layer.getSource()! as WMTS;
+    console.assert(source instanceof WMTSSource);
+
+    const dimensionParams = source.getDimensions();
+    const dimensions = Object.keys(dimensionParams);
+
+    const wmtsLayer: MFPWmtsLayer = {
+      type: 'wmts',
+      baseURL: getWmtsUrl(source),
+      dimensions,
+      dimensionParams,
+      imageFormat: source.getFormat(),
+      name: layer.get('name'),
+      layer: source.getLayer(),
+      matrices: getWmtsMatrices(source),
+      matrixSet: source.getMatrixSet(),
+      opacity: layerState.opacity,
+      requestEncoding: source.getRequestEncoding(),
+      style: source.getStyle(),
+      version: source.getVersion(),
+    };
+    customizer.wmtsLayer(layerState, wmtsLayer, source);
+    return wmtsLayer;
+  }
+
+  /**
    * @param layerState An MVT layer state
    * @param printResolution
    * @param customizer
@@ -185,76 +332,6 @@ export default class MFPBaseEncoder {
   }
 
   /**
-   * Encodes a tile layerState (high level method)
-   * @param layerState
-   * @param customizer
-   * @return a spec fragment
-   */
-  encodeTileLayerState(layerState: State, customizer: BaseCustomizer): MFPOSMLayer | MFPWmtsLayer {
-    const layer = layerState.layer;
-    console.assert(layer instanceof TileLayer);
-    const source = layer.getSource();
-    if (source instanceof WMTSSource) {
-      return this.encodeTileWmtsLayer(layerState, customizer);
-    } else if (source instanceof OSMSource) {
-      return this.encodeOSMLayerState(layerState, customizer);
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Encodes an OSM layerState
-   * @param layerState
-   * @param customizer
-   * @return a spec fragment
-   */
-  encodeOSMLayerState(layerState: State, customizer: BaseCustomizer): MFPOSMLayer {
-    const layer = layerState.layer;
-    const source = layer.getSource()! as OSMSource;
-    return {
-      type: 'osm',
-      baseURL: source.getUrls()[0],
-      opacity: layerState.opacity,
-      name: layer.get('name'),
-    };
-  }
-
-  /**
-   * Encodes a WMTS layerState
-   * @param layerState
-   * @param customizer
-   * @return a spec fragment
-   */
-  encodeTileWmtsLayer(layerState: State, customizer: BaseCustomizer): MFPWmtsLayer {
-    const layer = layerState.layer;
-    console.assert(layer instanceof TileLayer);
-    const source = layer.getSource()! as WMTS;
-    console.assert(source instanceof WMTSSource);
-
-    const dimensionParams = source.getDimensions();
-    const dimensions = Object.keys(dimensionParams);
-
-    const wmtsLayer: MFPWmtsLayer = {
-      type: 'wmts',
-      baseURL: getWmtsUrl(source),
-      dimensions,
-      dimensionParams,
-      imageFormat: source.getFormat(),
-      name: layer.get('name'),
-      layer: source.getLayer(),
-      matrices: getWmtsMatrices(source),
-      matrixSet: source.getMatrixSet(),
-      opacity: layerState.opacity,
-      requestEncoding: source.getRequestEncoding(),
-      style: source.getStyle(),
-      version: source.getVersion(),
-    };
-    customizer.wmtsLayer(layerState, wmtsLayer, source);
-    return wmtsLayer;
-  }
-
-  /**
    * Encodes Image layerState.
    * @param layerState
    * @param resolution
@@ -289,7 +366,7 @@ export default class MFPBaseEncoder {
       additionalDraw,
     );
 
-    const spec: MFPImageLayer = {
+    return {
       type: 'image',
       extent: printExtent,
       imageFormat: 'image/png', // this is the target image format in the mapfish-print
@@ -297,6 +374,5 @@ export default class MFPBaseEncoder {
       name: layer.get('name'),
       baseURL: asOpacity(this.scratchCanvas, layer.getOpacity()).toDataURL('PNG'),
     };
-    return spec;
   }
 }
