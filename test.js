@@ -21,7 +21,7 @@ test('Empty map', async (t) => {
   const result = await encoder.encodeMap({
     map,
     scale: 1,
-    printResolution: 96,
+    printResolution: map.getView().getResolution(),
     dpi: 300,
     customizer: customizer,
   });
@@ -56,7 +56,7 @@ test('OSM map', async (t) => {
   const spec = await encoder.encodeMap({
     map,
     scale: 1,
-    printResolution: 96,
+    printResolution: map.getView().getResolution(),
     dpi: 254,
     customizer: customizer,
   });

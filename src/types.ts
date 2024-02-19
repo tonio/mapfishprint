@@ -96,6 +96,21 @@ export interface MFPWmtsLayer extends MFPLayer {
   version: string;
 }
 
+export interface MFPWmsLayer extends MFPLayer {
+  type: 'wms';
+  baseURL: string;
+  imageFormat: string;
+  layers: string[];
+  customParams: Record<string, string>;
+  /** The server type ("mapserver", "geoserver" or "qgisserver"). */
+  serverType: string;
+  opacity: number;
+  version: string;
+  styles: string[];
+  /** For GeoServer, and MapServer, ask the map server to do the rotation. */
+  useNativeAngle: boolean;
+}
+
 export interface MFPImageLayer extends MFPLayer {
   type: 'image';
   extent: number[];
