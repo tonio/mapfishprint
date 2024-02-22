@@ -26,7 +26,7 @@ const map = new Map({
   }),
 });
 
-var report = null;
+let report = null;
 
 document.querySelector('#cancel').addEventListener('click', async () => {
   console.log('Cancel print');
@@ -95,7 +95,7 @@ document.querySelector('#print').addEventListener('click', async () => {
         return error;
       },
     )
-    .then(() => {
+    .finally(() => {
       report = null;
     });
 });
