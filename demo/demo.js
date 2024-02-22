@@ -1,6 +1,12 @@
 import {Map, View} from 'ol';
 
-import {MFPEncoder, BaseCustomizer, requestReport, getDownloadUrl} from '@geoblocks/mapfishprint';
+import {
+  MFPEncoder,
+  BaseCustomizer,
+  requestReport,
+  getDownloadUrl,
+  cancelPrint,
+} from '@geoblocks/mapfishprint';
 import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
 import {fromLonLat} from 'ol/proj.js';
@@ -18,6 +24,22 @@ const map = new Map({
     center: fromLonLat([7.1560911, 46.3521411]),
     zoom: 12,
   }),
+});
+
+var report = null;
+
+document.querySelector('#cancel').addEventListener('click', async () => {
+  console.log('Cancel print');
+  if (report) {
+    const cancelResult = await cancelPrint(MFP_URL, report.ref);
+    if (cancelResult.status === 200) {
+      console.log('Print is canceled');
+    } else {
+      console.log('Failed to cancel print');
+    }
+  } else {
+    console.log('No print in progress');
+  }
 });
 
 document.querySelector('#print').addEventListener('click', async () => {
@@ -56,20 +78,24 @@ document.querySelector('#print').addEventListener('click', async () => {
   console.log('spec', spec);
   specEl.innerHTML = JSON.stringify(spec, null, '  ');
 
-  const report = await requestReport(MFP_URL, spec);
+  report = await requestReport(MFP_URL, spec);
   console.log('report', report);
   reportEl.innerHTML = JSON.stringify(report, null, '  ');
 
-  await getDownloadUrl(MFP_URL, report, 1000).then(
-    (url) => {
-      resultEl.innerHTML = url;
-      document.location = url;
-      return url;
-    },
-    (error) => {
-      console.log('result', 'error', error);
-      resultEl.innerHTML = error;
-      return error;
-    },
-  );
+  await getDownloadUrl(MFP_URL, report, 1000)
+    .then(
+      (url) => {
+        resultEl.innerHTML = url;
+        document.location = url;
+        return url;
+      },
+      (error) => {
+        console.log('result', 'error', error);
+        resultEl.innerHTML = error;
+        return error;
+      },
+    )
+    .then(() => {
+      report = null;
+    });
 });
