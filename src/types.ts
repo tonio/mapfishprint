@@ -168,3 +168,7 @@ export interface MFPStatusResponse {
   status: string;
   waitingTime: number;
 }
+
+export interface MFPCancelResponse {
+  status: string;
+}
