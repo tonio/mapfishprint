@@ -29,16 +29,16 @@ const map = new Map({
 let report = null;
 
 document.querySelector('#cancel').addEventListener('click', async () => {
-  console.log('Cancel print');
+  const resultEl = document.querySelector('#result');
   if (report) {
     const cancelResult = await cancelPrint(MFP_URL, report.ref);
     if (cancelResult.status === 200) {
-      console.log('Print is canceled');
+      resultEl.innerHTML = 'Print is canceled';
     } else {
-      console.log('Failed to cancel print');
+      resultEl.innerHTML = 'Failed to cancel print';
     }
   } else {
-    console.log('No print in progress');
+    resultEl.innerHTML = 'No print in progress';
   }
 });
 

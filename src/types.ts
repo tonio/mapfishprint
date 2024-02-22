@@ -170,5 +170,5 @@ export interface MFPStatusResponse {
 }
 
 export interface MFPCancelResponse {
-  status: string;
+  status: number;
 }
