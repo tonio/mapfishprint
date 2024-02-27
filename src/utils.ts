@@ -1,6 +1,6 @@
 import WMTSTileGrid from 'ol/tilegrid/WMTS.js';
 import {toSize} from 'ol/size.js';
-import type {MFPReportResponse, MFPSpec, MFPStatusResponse, MFPWmtsMatrix} from './types';
+import type {MFPCancelResponse, MFPReportResponse, MFPSpec, MFPStatusResponse, MFPWmtsMatrix} from './types';
 import type {WMTS} from 'ol/source.js';
 import type {Extent} from 'ol/extent';
 import {Constants, CalculatedConstants} from './constants';
@@ -104,7 +104,13 @@ export function getWmtsUrl(source: WMTS): string {
 }
 
 export async function getStatus(mfpBaseUrl: string, ref: string): Promise<MFPStatusResponse> {
-  return await (await fetch(`${mfpBaseUrl}/status/${ref}.json`)).json();
+  const response = await fetch(`${mfpBaseUrl}/status/${ref}.json`);
+  return await response.json();
+}
+
+export async function cancelPrint(mfpBaseUrl: string, ref: string): Promise<MFPCancelResponse> {
+  const response = await fetch(`${mfpBaseUrl}/cancel/${ref}`, {method: 'DELETE'});
+  return {status: response.status};
 }
 
 export async function requestReport(mfpBaseUrl: string, spec: MFPSpec): Promise<MFPReportResponse> {
