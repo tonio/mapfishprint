@@ -163,7 +163,7 @@ test('Vector features', async (t) => {
               },
               properties: {
                 name: 'A polygon',
-                _gmfp_style: '1',
+                _mfp_style: '1',
               },
             },
             {
@@ -178,7 +178,7 @@ test('Vector features', async (t) => {
               },
               properties: {
                 name: 'A line',
-                _gmfp_style: '2',
+                _mfp_style: '2',
               },
             },
             {
@@ -189,7 +189,7 @@ test('Vector features', async (t) => {
               },
               properties: {
                 name: 'A point',
-                _gmfp_style: '3',
+                _mfp_style: '3',
               },
             },
           ],
@@ -198,7 +198,7 @@ test('Vector features', async (t) => {
         opacity: 1,
         style: {
           version: 2,
-          "[_gmfp_style = '1']": {
+          "[_mfp_style = '1']": {
             symbolizers: [
               {
                 type: 'polygon',
@@ -221,7 +221,7 @@ test('Vector features', async (t) => {
               },
             ],
           },
-          "[_gmfp_style = '2']": {
+          "[_mfp_style = '2']": {
             symbolizers: [
               {
                 type: 'line',
@@ -242,7 +242,7 @@ test('Vector features', async (t) => {
               },
             ],
           },
-          "[_gmfp_style = '3']": {
+          "[_mfp_style = '3']": {
             symbolizers: [
               {
                 type: 'text',

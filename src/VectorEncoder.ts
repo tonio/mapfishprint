@@ -21,14 +21,17 @@ import type {
 import type {State} from 'ol/layer/Layer.js';
 import type {Feature as GeoJSONFeature, FeatureCollection as GeoJSONFeatureCollection} from 'geojson';
 
+/** Represents the different types of printing styles. */
 export const PrintStyleType = {
   LINE_STRING: 'LineString',
   POINT: 'Point',
   POLYGON: 'Polygon',
 } as const;
 
+/** Supported geometry types */
 type GeometryType = 'LineString' | 'Point' | 'Polygon' | 'MultiLineString' | 'MultiPolygon';
 
+/** Link between supported geometry and print style types. */
 export const PrintStyleTypes_ = {
   LineString: PrintStyleType.LINE_STRING,
   Point: PrintStyleType.POINT,
@@ -38,8 +41,14 @@ export const PrintStyleTypes_ = {
   MultiPolygon: PrintStyleType.POLYGON,
 } as const;
 
-const FEATURE_STYLE_PROP = '_gmfp_style';
+/** Key prefix to feature style prop */
+const FEATURE_STYLE_PROP = '_mfp_style';
 
+/**
+ * Calculates the priority of a GeoJSON feature based on its feature type.
+ * For sort functions, to let points appearing to the top.
+ * @returns The priority value.
+ */
 const featureTypePriority_ = (feature: GeoJSONFeature): number => {
   const geometry = feature.geometry;
   if (geometry && geometry.type === 'Point') {
@@ -49,6 +58,9 @@ const featureTypePriority_ = (feature: GeoJSONFeature): number => {
   }
 };
 
+/**
+ * @returns A string or an array of strings into a formatted style key.
+ */
 const styleKey = (styles: string | string[]): string => {
   const keys = Array.isArray(styles) ? styles.join(',') : styles;
   return `[${FEATURE_STYLE_PROP} = '${keys}']`;
@@ -74,6 +86,10 @@ export default class VectorEncoder {
     this.customizer_ = customizer;
   }
 
+  /**
+   * Encodes the vector layer into a mapfish vector layer object.
+   * @returns The encoded vector layer object or null if the layer is empty.
+   */
   encodeVectorLayer(resolution: number): MFPVectorLayer | null {
     const source = this.layer_.getSource();
     if (!source) {
@@ -161,11 +177,13 @@ export default class VectorEncoder {
         type: 'geojson',
         name: this.layer_.get('name'),
       };
-    } else {
-      return null;
     }
+    return null;
   }
 
+  /**
+   * @returns The unique identifier for the given style.
+   */
   getDeepStyleUid(style: Style): string {
     const todo = [style];
     let key = '';
@@ -184,13 +202,15 @@ export default class VectorEncoder {
     }
     if (this.deepIds_.has(key)) {
       return this.deepIds_.get(key)!.toString();
-    } else {
-      const uid = ++this.lastDeepId_;
-      this.deepIds_.set(key, uid);
-      return uid.toString();
     }
+    const uid = ++this.lastDeepId_;
+    this.deepIds_.set(key, uid);
+    return uid.toString();
   }
 
+  /**
+   * Adds a vector style to the mapfishStyleObject based on the given parameters.
+   */
   addVectorStyle(
     mapfishStyleObject: MFPVectorStyle,
     geojsonFeature: GeoJSONFeature,
@@ -237,6 +257,10 @@ export default class VectorEncoder {
     }
   }
 
+  /**
+   * Encodes the vector style based on the geometry type and style.
+   * @returns The encoded vector style, or null if the geometry type is unsupported.
+   */
   encodeVectorStyle(geometryType: GeometryType, style: Style): MFPSymbolizers | null {
     if (!(geometryType in PrintStyleTypes_)) {
       // unsupported geometry type
@@ -269,21 +293,28 @@ export default class VectorEncoder {
     return styleObject;
   }
 
+  /**
+   * Encodes the vector style fill for a symbolizer.
+   */
   protected encodeVectorStyleFill(
     symbolizer: MFPSymbolizerPoint | MFPSymbolizerPolygon | MFPSymbolizerText,
     fillStyle: Fill,
   ) {
     let fillColor = fillStyle.getColor();
-    if (fillColor !== null) {
-      console.assert(typeof fillColor === 'string' || Array.isArray(fillColor));
-      // @ts-ignore
-      fillColor = asArray(fillColor);
-      console.assert(Array.isArray(fillColor), 'only supporting fill colors');
-      symbolizer.fillColor = rgbArrayToHex(fillColor);
-      symbolizer.fillOpacity = fillColor[3];
+    if (fillColor === null) {
+      return;
     }
+    console.assert(typeof fillColor === 'string' || Array.isArray(fillColor));
+    // @ts-ignore
+    fillColor = asArray(fillColor);
+    console.assert(Array.isArray(fillColor), 'only supporting fill colors');
+    symbolizer.fillColor = rgbArrayToHex(fillColor);
+    symbolizer.fillOpacity = fillColor[3];
   }
 
+  /**
+   * Encodes the vector style for a line symbolizer, using the given stroke style.
+   */
   protected encodeVectorStyleLine(symbolizers: MFPSymbolizer[], strokeStyle: Stroke) {
     const symbolizer = {
       type: 'line',
@@ -293,96 +324,123 @@ export default class VectorEncoder {
     symbolizers.push(symbolizer);
   }
 
+  /**
+   * Encodes a vector style point.
+   */
   protected encodeVectorStylePoint(symbolizers: MFPSymbolizer[], imageStyle: Image) {
-    let symbolizer;
+    let symbolizer: MFPSymbolizerPoint | undefined;
     if (imageStyle instanceof olStyleCircle) {
-      symbolizer = {
-        type: 'point',
-      } as MFPSymbolizerPoint;
-      symbolizer.pointRadius = imageStyle.getRadius();
-      const scale = imageStyle.getScale();
-      if (scale) {
-        if (Array.isArray(scale)) {
-          symbolizer.pointRadius *= (scale[0] + scale[1]) / 2;
-        } else {
-          symbolizer.pointRadius *= scale;
-        }
-      }
-      const fillStyle = imageStyle.getFill();
-      if (fillStyle !== null) {
-        this.encodeVectorStyleFill(symbolizer, fillStyle);
-      }
-      const strokeStyle = imageStyle.getStroke();
-      if (strokeStyle !== null) {
-        this.encodeVectorStyleStroke(symbolizer, strokeStyle);
-      }
+      symbolizer = this.encodeVectorStylePointStyleCircle(imageStyle);
     } else if (imageStyle instanceof olStyleIcon) {
-      const src = imageStyle.getSrc();
-      if (src !== undefined) {
-        symbolizer = {
-          type: 'point',
-          externalGraphic: src,
-        } as MFPSymbolizerPoint;
-        const opacity = imageStyle.getOpacity();
-        if (opacity !== null) {
-          symbolizer.graphicOpacity = opacity;
-        }
-        const size = imageStyle.getSize();
-        if (size !== null) {
-          let scale = imageStyle.getScale();
-          if (Array.isArray(scale)) {
-            scale = (scale[0] + scale[1]) / 2;
-          }
-          if (isNaN(scale)) {
-            scale = 1;
-          }
-          const width = size[0] * scale;
-          const height = size[1] * scale;
-
-          // Note: 'graphicWidth' is misnamed as of mapfish-print 3.14.1, it actually sets the height
-          symbolizer.graphicWidth = height;
-
-          this.addGraphicOffset_(symbolizer, imageStyle, width, height);
-        }
-        let rotation = imageStyle.getRotation();
-        if (isNaN(rotation)) {
-          rotation = 0;
-        }
-        symbolizer.rotation = toDegrees(rotation);
-      }
+      symbolizer = this.encodeVectorStylePointStyleIcon(imageStyle);
     }
-    if (symbolizer !== undefined) {
+    if (symbolizer) {
       this.customizer_.point(this.layerState_, symbolizer, imageStyle);
       symbolizers.push(symbolizer);
     }
   }
 
-  addGraphicOffset_(symbolizer: MFPSymbolizerPoint, icon: Icon, width: number, height: number) {
-    if (!this.hasDefaultAnchor_(icon)) {
-      const topLeftOffset = icon.getAnchor();
-      const centerXOffset = width / 2 - topLeftOffset[0];
-      const centerYOffset = height / 2 - topLeftOffset[1];
-      symbolizer.graphicXOffset = centerXOffset;
-      symbolizer.graphicYOffset = centerYOffset;
+  /**
+   * Encodes the vector style point style circle.
+   * @returns The encoded symbolizer point.
+   */
+  protected encodeVectorStylePointStyleCircle(imageStyle: olStyleCircle): MFPSymbolizerPoint {
+    const symbolizer = {
+      type: 'point',
+    } as MFPSymbolizerPoint;
+    symbolizer.pointRadius = imageStyle.getRadius();
+    const scale = imageStyle.getScale();
+    if (scale) {
+      if (Array.isArray(scale)) {
+        symbolizer.pointRadius *= (scale[0] + scale[1]) / 2;
+      } else {
+        symbolizer.pointRadius *= scale;
+      }
     }
+    const fillStyle = imageStyle.getFill();
+    if (fillStyle !== null) {
+      this.encodeVectorStyleFill(symbolizer, fillStyle);
+    }
+    const strokeStyle = imageStyle.getStroke();
+    if (strokeStyle !== null) {
+      this.encodeVectorStyleStroke(symbolizer, strokeStyle);
+    }
+    return symbolizer;
   }
 
   /**
-   * @suppress {accessControls}
+   * Encodes a Vector Style point style icon.
+   * @returns The encoded symbolizer point style or undefined if imageStyle src is undefined.
+   */
+  protected encodeVectorStylePointStyleIcon(imageStyle: olStyleIcon): MFPSymbolizerPoint | undefined {
+    const src = imageStyle.getSrc();
+    if (src === undefined) {
+      return undefined;
+    }
+    const symbolizer = {
+      type: 'point',
+      externalGraphic: src,
+    } as MFPSymbolizerPoint;
+    const opacity = imageStyle.getOpacity();
+    if (opacity !== null) {
+      symbolizer.graphicOpacity = opacity;
+    }
+    const size = imageStyle.getSize();
+    if (size !== null) {
+      let scale = imageStyle.getScale();
+      if (Array.isArray(scale)) {
+        scale = (scale[0] + scale[1]) / 2;
+      }
+      if (isNaN(scale)) {
+        scale = 1;
+      }
+      const width = size[0] * scale;
+      const height = size[1] * scale;
+
+      // Note: 'graphicWidth' is misnamed as of mapfish-console.log 3.14.1, it actually sets the height
+      symbolizer.graphicWidth = height;
+
+      this.addGraphicOffset_(symbolizer, imageStyle, width, height);
+    }
+    let rotation = imageStyle.getRotation();
+    if (isNaN(rotation)) {
+      rotation = 0;
+    }
+    symbolizer.rotation = toDegrees(rotation);
+    return symbolizer;
+  }
+
+  /**
+   * Add the graphic offset to the symbolizer.
+   */
+  addGraphicOffset_(symbolizer: MFPSymbolizerPoint, icon: Icon, width: number, height: number) {
+    if (this.hasDefaultAnchor_(icon)) {
+      return;
+    }
+    const topLeftOffset = icon.getAnchor();
+    const centerXOffset = width / 2 - topLeftOffset[0];
+    const centerYOffset = height / 2 - topLeftOffset[1];
+    symbolizer.graphicXOffset = centerXOffset;
+    symbolizer.graphicYOffset = centerYOffset;
+  }
+
+  /**
+   * Checks if the provided icon has default anchor properties.
+   * @returns true if the icon has default anchor properties, otherwise false.
    */
   hasDefaultAnchor_(icon: Icon) {
-    // prettier-ignore
     // @ts-ignore
-    const hasDefaultCoordinates = icon.anchor_[0] === 0.5 && icon.anchor_[1] === 0.5;
-    // @ts-ignore
-    const hasDefaultOrigin = icon.anchorOrigin_ === 'top-left';
-    // @ts-ignore
-    const hasDefaultXUnits = icon.anchorXUnits_ === 'fraction';
-    // @ts-ignore
-    const hasDefaultYUnits = icon.anchorYUnits_ === 'fraction';
+    const icon_ = icon as any;
+    const hasDefaultCoordinates = icon_.anchor_[0] === 0.5 && icon_.anchor_[1] === 0.5;
+    const hasDefaultOrigin = icon_.anchorOrigin_ === 'top-left';
+    const hasDefaultXUnits = icon_.anchorXUnits_ === 'fraction';
+    const hasDefaultYUnits = icon_.anchorYUnits_ === 'fraction';
     return hasDefaultCoordinates && hasDefaultOrigin && hasDefaultXUnits && hasDefaultYUnits;
   }
 
+  /**
+   * Encodes the vector style of a polygon by applying fill and stroke styles.
+   */
   protected encodeVectorStylePolygon(symbolizers: MFPSymbolizer[], fillStyle: Fill, strokeStyle: Stroke) {
     const symbolizer = {
       type: 'polygon',
@@ -394,6 +452,9 @@ export default class VectorEncoder {
     symbolizers.push(symbolizer);
   }
 
+  /**
+   * Encodes the vector style stroke properties.
+   */
   protected encodeVectorStyleStroke(
     symbolizer: MFPSymbolizerPoint | MFPSymbolizerLine | MFPSymbolizerPolygon,
     strokeStyle: Stroke,
@@ -426,6 +487,9 @@ export default class VectorEncoder {
     }
   }
 
+  /**
+   * Encodes vector style text.
+   */
   protected encodeVectorStyleText(symbolizers: MFPSymbolizer[], textStyle: Text) {
     const label = textStyle.getText();
     if (label) {
