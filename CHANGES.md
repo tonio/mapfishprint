@@ -1,6 +1,11 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.5
+
+- Fix not printed text on lines and polygons.
+
 ## 0.2.4
+- Add a cancel function.
 - Move createReport to utils.
 - Add **raw** encode support for WMS and Tile WMS layers.
 
