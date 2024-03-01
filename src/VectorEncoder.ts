@@ -262,9 +262,9 @@ export default class VectorEncoder {
       if (imageStyle !== null) {
         this.encodeVectorStylePoint(styleObject.symbolizers, imageStyle);
       }
-      if (textStyle !== null) {
-        this.encodeVectorStyleText(styleObject.symbolizers, textStyle);
-      }
+    }
+    if (textStyle !== null) {
+      this.encodeVectorStyleText(styleObject.symbolizers, textStyle);
     }
     return styleObject;
   }
