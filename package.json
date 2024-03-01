@@ -16,6 +16,8 @@
   "types": "lib/types/index.d.ts",
   "scripts": {
     "test": "npm run prepare && node -r ./setup-browser-env.cjs --test test.js",
+    "test:debug": "npm run prepare && npm run test:debug:help && node -r ./setup-browser-env.cjs --inspect-brk --watch --test test.js",
+    "test:debug:help": "echo '---' && echo 'Debug is reachable in your browser at chrome://inspect' && echo '---'",
     "eslint": "eslint src *.js",
     "checks": "npm run eslint && npm run typecheck",
     "prettier-fix": "prettier -w src *.js",

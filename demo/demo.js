@@ -9,19 +9,84 @@ import {
 } from '@geoblocks/mapfishprint';
 import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
-import {fromLonLat} from 'ol/proj.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
+import {Circle, Fill, Stroke, Style, Text} from 'ol/style.js';
+import Feature from './ol/Feature.js';
+import {Polygon, LineString, Point} from 'ol/geom.js';
+import {getPrintExtent} from './lib/utils.js';
 
 const MFP_URL = 'https://geomapfish-demo-2-8.camptocamp.com/printproxy';
 const layout = '1 A4 portrait'; // better take from MFP
+const pageSize = [254, 675]; // better take from MFP
+const getStyleFn = (fillColor) => {
+  const fill = new Fill({color: fillColor});
+  const stroke = new Stroke({
+    color: '#002288',
+    width: 1.25,
+  });
+  return (feature) => {
+    return new Style({
+      fill,
+      stroke,
+      text: new Text({
+        text: feature.get('name'),
+        font: '12px sans-serif',
+        offsetY: 12,
+      }),
+      image: new Circle({
+        fill,
+        stroke: stroke,
+        radius: 5,
+      }),
+    });
+  };
+};
+const vectorLayer = new VectorLayer({
+  source: new VectorSource(),
+  style: getStyleFn('rgba(255, 0, 255, 0.4)'),
+});
+const features = [
+  new Feature({
+    name: 'A polygon',
+    geometry: new Polygon([
+      [
+        [796612, 5837460],
+        [796812, 5837460],
+        [796812, 5837260],
+        [796612, 5837260],
+        [796612, 5837460],
+      ],
+    ]),
+  }),
+  new Feature({
+    name: 'A line',
+    geometry: new LineString([
+      [796712, 5836960],
+      [796712, 5836760],
+      [796812, 5836760],
+    ]),
+  }),
+  new Feature({
+    name: 'A point',
+    geometry: new Point([796612, 5836960]),
+  }),
+];
+features[0].setStyle(getStyleFn('rgba(255,155,50,0.4)'));
+features[1].setStyle(getStyleFn('rgba(0,0,0,0.4)'));
+// Features 0 and 1 use dedicated style. Feature 2 uses layer style.
+vectorLayer.getSource().addFeatures(features);
+
 const map = new Map({
   target: 'map',
   layers: [
     new TileLayer({
       source: new OSM(),
     }),
+    vectorLayer,
   ],
   view: new View({
-    center: fromLonLat([7.1560911, 46.3521411]),
+    center: [796612, 5836960],
     zoom: 12,
   }),
 });
@@ -48,7 +113,9 @@ document.querySelector('#print').addEventListener('click', async () => {
   const resultEl = document.querySelector('#result');
   specEl.innerHTML = reportEl.innerHTML = resultEl.innerHTML = '';
   const encoder = new MFPEncoder(MFP_URL);
-  const customizer = new BaseCustomizer([0, 0, 10000, 10000]);
+  const scale = 10000;
+  const center = map.getView().getCenter();
+  const customizer = new BaseCustomizer(getPrintExtent(pageSize, center, scale));
   /**
    * @type {MFPMap}
    */
