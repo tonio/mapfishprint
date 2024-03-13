@@ -12,6 +12,7 @@
     "CHANGES.md"
   ],
   "type": "module",
+  "main": "lib/index.js",
   "module": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "scripts": {
