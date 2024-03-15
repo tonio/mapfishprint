@@ -1,5 +1,11 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.6
+
+- Make it compatible with OpenLayers 9;
+- Remove support of OpenLayers 6;
+- Update @geoblocks/print.
+
 ## 0.2.5
 
 - Fix not printed text on lines and polygons.
