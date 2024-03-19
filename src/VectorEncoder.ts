@@ -158,27 +158,30 @@ export default class VectorEncoder {
     // features either. To work around this we just ignore the layer if the
     // array of GeoJSON features is empty.
     // See https://github.com/mapfish/mapfish-print/issues/279
-
-    if (geojsonFeatures.length > 0) {
-      // Reorder features: put points last, such that they appear on top
-      geojsonFeatures.sort((feature0, feature1) => {
-        const priority = featureTypePriority_;
-        return priority(feature1) - priority(feature0);
-      });
-
-      const geojsonFeatureCollection = {
-        type: 'FeatureCollection',
-        features: geojsonFeatures,
-      } as GeoJSONFeatureCollection;
-      return {
-        geoJson: geojsonFeatureCollection,
-        opacity: this.layerState_.opacity,
-        style: mapfishStyleObject,
-        type: 'geojson',
-        name: this.layer_.get('name'),
-      };
+    if (geojsonFeatures.length <= 0) {
+      return null;
     }
-    return null;
+    // And if there are no properties except the version in the style, ignore the layer.
+    if (Object.keys(mapfishStyleObject).length <= 1) {
+      return null;
+    }
+    // Reorder features: put points last, such that they appear on top
+    geojsonFeatures.sort((feature0, feature1) => {
+      const priority = featureTypePriority_;
+      return priority(feature1) - priority(feature0);
+    });
+
+    const geojsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features: geojsonFeatures,
+    } as GeoJSONFeatureCollection;
+    return {
+      geoJson: geojsonFeatureCollection,
+      opacity: this.layerState_.opacity,
+      style: mapfishStyleObject,
+      type: 'geojson',
+      name: this.layer_.get('name'),
+    };
   }
 
   /**
