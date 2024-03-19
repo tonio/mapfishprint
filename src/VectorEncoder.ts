@@ -111,57 +111,9 @@ export default class VectorEncoder {
       version: 2,
     };
 
-    features.forEach((feature) => {
-      let styleData = null;
-      const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
-      if (styleFunction) {
-        styleData = styleFunction(feature, resolution) as null | Style | Style[];
-      }
-      if (feature.getGeometry().getType() === 'Circle') {
-        feature = this.featureCircleAsPolygon(feature as Feature<Circle>);
-      }
-      const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
-
-      let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
-      if (!styles) {
-        return;
-      }
-      styles = styles.filter((style) => !!style);
-      if (styles.length === 0) {
-        return;
-      }
-      console.assert(Array.isArray(styles));
-      let isOriginalFeatureAdded = false;
-      styles.forEach((style) => {
-        // FIXME: the return of the function is very complicate and would require
-        // handling more cases than we actually do
-        let geometry: any = style.getGeometry();
-        let geojsonFeature;
-        if (geometry) {
-          const styledFeature = feature.clone();
-          styledFeature.setGeometry(geometry);
-          geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
-          geojsonFeatures.push(geojsonFeature);
-        } else {
-          geojsonFeature = origGeojsonFeature;
-          geometry = feature.getGeometry();
-          // no need to encode features with no geometry
-          if (!geometry) {
-            return;
-          }
-          if (!this.customizer_.geometryFilter(geometry)) {
-            return;
-          }
-          if (!isOriginalFeatureAdded) {
-            geojsonFeatures.push(geojsonFeature);
-            isOriginalFeatureAdded = true;
-          }
-        }
-
-        const geometryType = geometry.getType();
-        this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
-      });
-    });
+    features.forEach((feature) =>
+      this.encodeFeature(feature, resolution, geojsonFeatures, mapfishStyleObject),
+    );
 
     // MapFish Print fails if there are no style rules, even if there are no
     // features either. To work around this we just ignore the layer if the
@@ -191,6 +143,67 @@ export default class VectorEncoder {
       type: 'geojson',
       name: this.layer_.get('name'),
     };
+  }
+
+  /**
+   * Encodes a feature into a GeoJSON feature based and adds it to the array of GeoJSON features.
+   * Complete the mapfishStyleObject with the related styles.
+   */
+  encodeFeature(
+    feature: Feature,
+    resolution: number,
+    geojsonFeatures: GeoJSONFeature[],
+    mapfishStyleObject: MFPVectorStyle,
+  ) {
+    let styleData = null;
+    const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
+    if (styleFunction) {
+      styleData = styleFunction(feature, resolution) as null | Style | Style[];
+    }
+    if (feature.getGeometry().getType() === 'Circle') {
+      feature = this.featureCircleAsPolygon(feature as Feature<Circle>);
+    }
+    const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
+
+    let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
+    if (!styles) {
+      return;
+    }
+    styles = styles.filter((style) => !!style);
+    if (styles.length === 0) {
+      return;
+    }
+    console.assert(Array.isArray(styles));
+    let isOriginalFeatureAdded = false;
+    styles.forEach((style) => {
+      // FIXME: the return of the function is very complicate and would require
+      // handling more cases than we actually do
+      let geometry: any = style.getGeometry();
+      let geojsonFeature;
+      if (geometry) {
+        const styledFeature = feature.clone();
+        styledFeature.setGeometry(geometry);
+        geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
+        geojsonFeatures.push(geojsonFeature);
+      } else {
+        geojsonFeature = origGeojsonFeature;
+        geometry = feature.getGeometry();
+        // no need to encode features with no geometry
+        if (!geometry) {
+          return;
+        }
+        if (!this.customizer_.geometryFilter(geometry)) {
+          return;
+        }
+        if (!isOriginalFeatureAdded) {
+          geojsonFeatures.push(geojsonFeature);
+          isOriginalFeatureAdded = true;
+        }
+      }
+
+      const geometryType = geometry.getType();
+      this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
+    });
   }
 
   /**
