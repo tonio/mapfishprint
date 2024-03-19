@@ -11,6 +11,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from './demo/ol/Feature.js';
 import {Fill, Stroke, Style, Text} from 'ol/style.js';
+import {Constants} from './lib/constants.js';
 
 const MFP_URL = 'https://geomapfish-demo-2-8.camptocamp.com/printproxy';
 
@@ -45,6 +46,11 @@ const fPolygon = new Feature({
       [796612, 5837460],
     ],
   ]),
+});
+
+const fCircle = new Feature({
+  name: 'A circle',
+  geometry: new Circle([796612, 5836960], 10),
 });
 
 const fLine = new Feature({
@@ -125,10 +131,11 @@ test('OSM map', async (t) => {
 });
 
 test('Vector features', async (t) => {
+  Constants.CIRCLE_TO_POLYGON_SIDES = 8; // limit circle to 9 coordinates
   const map = getEmptyMap();
   const encoder = new MFPEncoder('./mfp_server_url');
   const customizer = new BaseCustomizer([0, 0, Infinity, Infinity]);
-  const features = [fPolygon, fLine, fPoint];
+  const features = [fPolygon, fCircle, fLine, fPoint];
   features.forEach((feature) => feature.setStyle(styleFn));
   map.getView();
   map.addLayer(
@@ -139,130 +146,169 @@ test('Vector features', async (t) => {
     }),
   );
   const spec = await encoder.encodeMap(getDefaultOptions(map, customizer));
-  assert.deepEqual(spec, {
-    center: [796612.417322277, 5836960.776101627],
-    dpi: 300,
-    layers: [
-      {
-        geoJson: {
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              geometry: {
-                type: 'Polygon',
-                coordinates: [
-                  [
-                    [796612, 5837460],
-                    [796812, 5837460],
-                    [796812, 5837260],
-                    [796612, 5837260],
-                    [796612, 5837460],
-                  ],
-                ],
-              },
-              properties: {
-                name: 'A polygon',
-                _mfp_style: '1',
-              },
-            },
-            {
-              type: 'Feature',
-              geometry: {
-                type: 'LineString',
-                coordinates: [
-                  [796712, 5836960],
-                  [796712, 5836760],
-                  [796812, 5836760],
-                ],
-              },
-              properties: {
-                name: 'A line',
-                _mfp_style: '2',
-              },
-            },
-            {
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [796612, 5836960],
-              },
-              properties: {
-                name: 'A point',
-                _mfp_style: '3',
-              },
-            },
-          ],
+  assert.deepEqual(spec.center, [796612.417322277, 5836960.776101627]);
+  assert(spec.dpi === 300);
+  assert(spec.projection === 'EPSG:3857');
+  assert(spec.rotation === 0);
+  assert(spec.scale === 1);
+  assert(spec.layers.length === 1);
+  assert(spec.layers[0].geoJson.features.length === 4);
+  assert.deepEqual(spec.layers[0].geoJson.features[0], {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [796612, 5837460],
+          [796812, 5837460],
+          [796812, 5837260],
+          [796612, 5837260],
+          [796612, 5837460],
+        ],
+      ],
+    },
+    properties: {
+      name: 'A polygon',
+      _mfp_style: '1',
+    },
+  });
+
+  assert.deepEqual(spec.layers[0].geoJson.features[1], {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [796622, 5836960],
+          [796619.0710678119, 5836967.071067812],
+          [796612, 5836970],
+          [796604.9289321881, 5836967.071067812],
+          [796602, 5836960],
+          [796604.9289321881, 5836952.928932188],
+          [796612, 5836950],
+          [796619.0710678119, 5836952.928932188],
+          [796622, 5836960],
+        ],
+      ],
+    },
+    properties: {
+      name: 'A circle',
+      _mfp_style: '2',
+    },
+  });
+  assert.deepEqual(spec.layers[0].geoJson.features[2], {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [796712, 5836960],
+        [796712, 5836760],
+        [796812, 5836760],
+      ],
+    },
+    properties: {
+      name: 'A line',
+      _mfp_style: '3',
+    },
+  });
+
+  assert.deepEqual(spec.layers[0].geoJson.features[3], {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [796612, 5836960],
+    },
+    properties: {
+      name: 'A point',
+      _mfp_style: '4',
+    },
+  });
+  assert(spec.layers[0].name === undefined);
+  assert(spec.layers[0].opacity === 1);
+  assert(spec.layers[0].type === 'geojson');
+  assert.deepEqual(spec.layers[0].style, {
+    version: 2,
+    "[_mfp_style = '1']": {
+      symbolizers: [
+        {
+          type: 'polygon',
+          fillColor: '#646464',
+          fillOpacity: 0.5,
+          strokeColor: '#002288',
+          strokeOpacity: 1,
+          strokeWidth: 1.25,
         },
-        name: undefined,
-        opacity: 1,
-        style: {
-          version: 2,
-          "[_mfp_style = '1']": {
-            symbolizers: [
-              {
-                type: 'polygon',
-                fillColor: '#646464',
-                fillOpacity: 0.5,
-                strokeColor: '#002288',
-                strokeOpacity: 1,
-                strokeWidth: 1.25,
-              },
-              {
-                type: 'text',
-                label: 'A polygon',
-                fontFamily: '12px sans-serif',
-                labelXOffset: 0,
-                labelYOffset: 12,
-                labelAlign: 'cm',
-                fillColor: '#333333',
-                fillOpacity: 1,
-                fontColor: '#333333',
-              },
-            ],
-          },
-          "[_mfp_style = '2']": {
-            symbolizers: [
-              {
-                type: 'line',
-                strokeColor: '#002288',
-                strokeOpacity: 1,
-                strokeWidth: 1.25,
-              },
-              {
-                type: 'text',
-                label: 'A line',
-                fontFamily: '12px sans-serif',
-                labelXOffset: 0,
-                labelYOffset: 12,
-                labelAlign: 'cm',
-                fillColor: '#333333',
-                fillOpacity: 1,
-                fontColor: '#333333',
-              },
-            ],
-          },
-          "[_mfp_style = '3']": {
-            symbolizers: [
-              {
-                type: 'text',
-                label: 'A point',
-                fontFamily: '12px sans-serif',
-                labelXOffset: 0,
-                labelYOffset: 12,
-                labelAlign: 'cm',
-                fillColor: '#333333',
-                fillOpacity: 1,
-                fontColor: '#333333',
-              },
-            ],
-          },
+        {
+          type: 'text',
+          label: 'A polygon',
+          fontFamily: '12px sans-serif',
+          labelXOffset: 0,
+          labelYOffset: 12,
+          labelAlign: 'cm',
+          fillColor: '#333333',
+          fillOpacity: 1,
+          fontColor: '#333333',
         },
-        type: 'geojson',
-      },
-    ],
-    projection: 'EPSG:3857',
-    rotation: 0,
-    scale: 1,
+      ],
+    },
+    "[_mfp_style = '2']": {
+      symbolizers: [
+        {
+          type: 'polygon',
+          fillColor: '#646464',
+          fillOpacity: 0.5,
+          strokeColor: '#002288',
+          strokeOpacity: 1,
+          strokeWidth: 1.25,
+        },
+        {
+          type: 'text',
+          label: 'A circle',
+          fontFamily: '12px sans-serif',
+          labelXOffset: 0,
+          labelYOffset: 12,
+          labelAlign: 'cm',
+          fillColor: '#333333',
+          fillOpacity: 1,
+          fontColor: '#333333',
+        },
+      ],
+    },
+    "[_mfp_style = '3']": {
+      symbolizers: [
+        {
+          type: 'line',
+          strokeColor: '#002288',
+          strokeOpacity: 1,
+          strokeWidth: 1.25,
+        },
+        {
+          type: 'text',
+          label: 'A line',
+          fontFamily: '12px sans-serif',
+          labelXOffset: 0,
+          labelYOffset: 12,
+          labelAlign: 'cm',
+          fillColor: '#333333',
+          fillOpacity: 1,
+          fontColor: '#333333',
+        },
+      ],
+    },
+    "[_mfp_style = '4']": {
+      symbolizers: [
+        {
+          type: 'text',
+          label: 'A point',
+          fontFamily: '12px sans-serif',
+          labelXOffset: 0,
+          labelYOffset: 12,
+          labelAlign: 'cm',
+          fillColor: '#333333',
+          fillOpacity: 1,
+          fontColor: '#333333',
+        },
+      ],
+    },
   });
 });

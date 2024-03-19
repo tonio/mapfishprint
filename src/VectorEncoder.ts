@@ -2,6 +2,8 @@ import {rgbArrayToHex} from './utils';
 import {GeoJSON as olFormatGeoJSON} from 'ol/format.js';
 import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style.js';
 import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style.js';
+import Feature from 'ol/Feature.js';
+import type Circle from 'ol/geom/Circle.js';
 import {getUid} from 'ol';
 import {asArray} from 'ol/color.js';
 import {toDegrees} from 'ol/math.js';
@@ -20,6 +22,8 @@ import type {
 } from './types';
 import type {State} from 'ol/layer/Layer.js';
 import type {Feature as GeoJSONFeature, FeatureCollection as GeoJSONFeatureCollection} from 'geojson';
+import {fromCircle} from 'ol/geom/Polygon.js';
+import {Constants} from './constants';
 
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
@@ -31,7 +35,10 @@ export const PrintStyleType = {
 /** Supported geometry types */
 type GeometryType = 'LineString' | 'Point' | 'Polygon' | 'MultiLineString' | 'MultiPolygon';
 
-/** Link between supported geometry and print style types. */
+/**
+ * Link between supported geometry and print style types.
+ * Circles will be handled as polygon.
+ * */
 export const PrintStyleTypes_ = {
   LineString: PrintStyleType.LINE_STRING,
   Point: PrintStyleType.POINT,
@@ -110,6 +117,9 @@ export default class VectorEncoder {
       if (styleFunction) {
         styleData = styleFunction(feature, resolution) as null | Style | Style[];
       }
+      if (feature.getGeometry().getType() === 'Circle') {
+        feature = this.featureCircleAsPolygon(feature as Feature<Circle>);
+      }
       const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
 
       let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
@@ -122,8 +132,7 @@ export default class VectorEncoder {
       }
       console.assert(Array.isArray(styles));
       let isOriginalFeatureAdded = false;
-      for (let j = 0, jj = styles.length; j < jj; ++j) {
-        const style = styles[j];
+      styles.forEach((style) => {
         // FIXME: the return of the function is very complicate and would require
         // handling more cases than we actually do
         let geometry: any = style.getGeometry();
@@ -138,10 +147,10 @@ export default class VectorEncoder {
           geometry = feature.getGeometry();
           // no need to encode features with no geometry
           if (!geometry) {
-            continue;
+            return;
           }
           if (!this.customizer_.geometryFilter(geometry)) {
-            continue;
+            return;
           }
           if (!isOriginalFeatureAdded) {
             geojsonFeatures.push(geojsonFeature);
@@ -151,7 +160,7 @@ export default class VectorEncoder {
 
         const geometryType = geometry.getType();
         this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
-      }
+      });
     });
 
     // MapFish Print fails if there are no style rules, even if there are no
@@ -266,7 +275,7 @@ export default class VectorEncoder {
    */
   encodeVectorStyle(geometryType: GeometryType, style: Style): MFPSymbolizers | null {
     if (!(geometryType in PrintStyleTypes_)) {
-      // unsupported geometry type
+      console.warn('Unsupported geometry type: ', geometryType);
       return null;
     }
     const styleType = PrintStyleTypes_[geometryType];
@@ -527,5 +536,16 @@ export default class VectorEncoder {
       }
       symbolizers.push(symbolizer);
     }
+  }
+
+  /**
+   * Converts a circle feature to a N sides polygon feature.
+   * Sides are defined in Constants.CIRCLE_TO_POLYGON_SIDES.
+   */
+  protected featureCircleAsPolygon(feature: Feature<Circle>) {
+    return new Feature({
+      ...feature.getProperties(),
+      geometry: fromCircle(feature.getGeometry(), Constants.CIRCLE_TO_POLYGON_SIDES),
+    });
   }
 }
