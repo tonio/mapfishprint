@@ -169,7 +169,7 @@ export default class MFPBaseEncoder {
   encodeImageWmsLayerState(layerState: State, customizer: BaseCustomizer) {
     const layer = layerState.layer;
     const source = layer.getSource() as ImageWMSSource;
-    console.assert(layer instanceof ImageWMSSource);
+    console.assert(source instanceof ImageWMSSource);
     const url = source.getUrl();
     if (url !== undefined) {
       return this.encodeWmsLayerState(layerState, url, source.getParams(), customizer);
@@ -185,8 +185,8 @@ export default class MFPBaseEncoder {
     return {
       name: layer.get('name'),
       baseURL: url,
-      imageFormat: 'image/png',
-      layers: [''],
+      imageFormat: params.FORMAT,
+      layers: params.LAYERS.split(','),
       customParams: {},
       serverType: 'mapserver',
       type: 'wms',
@@ -232,7 +232,7 @@ export default class MFPBaseEncoder {
     const layer = layerState.layer;
     console.assert(layer instanceof TileLayer);
     const source = layer.getSource() as TileWMSSource;
-    console.assert(layer instanceof TileWMSSource);
+    console.assert(source instanceof TileWMSSource);
     const urls = source.getUrls();
     console.assert(!!urls);
     return this.encodeWmsLayerState(layerState, urls[0], source.getParams(), customizer);
