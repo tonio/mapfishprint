@@ -232,7 +232,7 @@ export default class MFPBaseEncoder {
     const layer = layerState.layer;
     console.assert(layer instanceof TileLayer);
     const source = layer.getSource() as TileWMSSource;
-    console.assert(layer instanceof TileWMSSource);
+    console.assert(source instanceof TileWMSSource);
     const urls = source.getUrls();
     console.assert(!!urls);
     return this.encodeWmsLayerState(layerState, urls[0], source.getParams(), customizer);
