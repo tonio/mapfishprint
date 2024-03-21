@@ -185,7 +185,7 @@ export default class MFPBaseEncoder {
     return {
       name: layer.get('name'),
       baseURL: url,
-      imageFormat: 'image/png',
+      imageFormat: params.FORMAT,
       layers: params.LAYERS.split(','),
       customParams: {},
       serverType: 'mapserver',
