@@ -169,7 +169,7 @@ export default class MFPBaseEncoder {
   encodeImageWmsLayerState(layerState: State, customizer: BaseCustomizer) {
     const layer = layerState.layer;
     const source = layer.getSource() as ImageWMSSource;
-    console.assert(layer instanceof ImageWMSSource);
+    console.assert(source instanceof ImageWMSSource);
     const url = source.getUrl();
     if (url !== undefined) {
       return this.encodeWmsLayerState(layerState, url, source.getParams(), customizer);
@@ -186,7 +186,7 @@ export default class MFPBaseEncoder {
       name: layer.get('name'),
       baseURL: url,
       imageFormat: 'image/png',
-      layers: [''],
+      layers: params.LAYERS.split(','),
       customParams: {},
       serverType: 'mapserver',
       type: 'wms',

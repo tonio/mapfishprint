@@ -9,12 +9,14 @@ import {
 } from '@geoblocks/mapfishprint';
 import TileLayer from 'ol/layer/Tile.js';
 import OSM from 'ol/source/OSM.js';
+import ImageWMS from 'ol/source/ImageWMS.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import {Circle, Fill, Stroke, Style, Text} from 'ol/style.js';
 import Feature from './ol/Feature.js';
 import {Polygon, LineString, Point} from 'ol/geom.js';
 import {getPrintExtent} from './lib/utils.js';
+import ImageLayer from 'ol/layer/Image.js';
 
 const MFP_URL = 'https://geomapfish-demo-2-8.camptocamp.com/printproxy';
 const layout = '1 A4 portrait'; // better take from MFP
@@ -77,6 +79,19 @@ features[1].setStyle(getStyleFn('rgba(0,0,0,0.4)'));
 // Features 0 and 1 use dedicated style. Feature 2 uses layer style.
 vectorLayer.getSource().addFeatures(features);
 
+const wmsLayer = new ImageLayer({
+  source: new ImageWMS({
+    url: 'https://wms.geo.admin.ch/',
+    params: {
+      LAYERS: 'ch.astra.wanderland-sperrungen_umleitungen',
+      FORMAT: 'image/png',
+      CRS: 'EPSG:4326',
+      TRANSPARENT: true,
+    },
+    crossOrigin: 'anonymous',
+  }),
+});
+
 const map = new Map({
   target: 'map',
   layers: [
@@ -84,6 +99,7 @@ const map = new Map({
       source: new OSM(),
     }),
     vectorLayer,
+    wmsLayer,
   ],
   view: new View({
     center: [796612, 5836960],
