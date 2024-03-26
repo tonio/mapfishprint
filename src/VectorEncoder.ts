@@ -2,6 +2,8 @@ import {rgbArrayToHex} from './utils';
 import {GeoJSON as olFormatGeoJSON} from 'ol/format.js';
 import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style.js';
 import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style.js';
+import Feature from 'ol/Feature.js';
+import type Circle from 'ol/geom/Circle.js';
 import {getUid} from 'ol';
 import {asArray} from 'ol/color.js';
 import {toDegrees} from 'ol/math.js';
@@ -20,6 +22,8 @@ import type {
 } from './types';
 import type {State} from 'ol/layer/Layer.js';
 import type {Feature as GeoJSONFeature, FeatureCollection as GeoJSONFeatureCollection} from 'geojson';
+import {fromCircle} from 'ol/geom/Polygon.js';
+import {Constants} from './constants';
 
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
@@ -31,7 +35,10 @@ export const PrintStyleType = {
 /** Supported geometry types */
 type GeometryType = 'LineString' | 'Point' | 'Polygon' | 'MultiLineString' | 'MultiPolygon';
 
-/** Link between supported geometry and print style types. */
+/**
+ * Link between supported geometry and print style types.
+ * Circles will be handled as polygon.
+ * */
 export const PrintStyleTypes_ = {
   LineString: PrintStyleType.LINE_STRING,
   Point: PrintStyleType.POINT,
@@ -104,81 +111,99 @@ export default class VectorEncoder {
       version: 2,
     };
 
-    features.forEach((feature) => {
-      let styleData = null;
-      const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
-      if (styleFunction) {
-        styleData = styleFunction(feature, resolution) as null | Style | Style[];
-      }
-      const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
-
-      let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
-      if (!styles) {
-        return;
-      }
-      styles = styles.filter((style) => !!style);
-      if (styles.length === 0) {
-        return;
-      }
-      console.assert(Array.isArray(styles));
-      let isOriginalFeatureAdded = false;
-      for (let j = 0, jj = styles.length; j < jj; ++j) {
-        const style = styles[j];
-        // FIXME: the return of the function is very complicate and would require
-        // handling more cases than we actually do
-        let geometry: any = style.getGeometry();
-        let geojsonFeature;
-        if (geometry) {
-          const styledFeature = feature.clone();
-          styledFeature.setGeometry(geometry);
-          geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
-          geojsonFeatures.push(geojsonFeature);
-        } else {
-          geojsonFeature = origGeojsonFeature;
-          geometry = feature.getGeometry();
-          // no need to encode features with no geometry
-          if (!geometry) {
-            continue;
-          }
-          if (!this.customizer_.geometryFilter(geometry)) {
-            continue;
-          }
-          if (!isOriginalFeatureAdded) {
-            geojsonFeatures.push(geojsonFeature);
-            isOriginalFeatureAdded = true;
-          }
-        }
-
-        const geometryType = geometry.getType();
-        this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
-      }
-    });
+    features.forEach((feature) =>
+      this.encodeFeature(feature, resolution, geojsonFeatures, mapfishStyleObject),
+    );
 
     // MapFish Print fails if there are no style rules, even if there are no
     // features either. To work around this we just ignore the layer if the
     // array of GeoJSON features is empty.
     // See https://github.com/mapfish/mapfish-print/issues/279
-
-    if (geojsonFeatures.length > 0) {
-      // Reorder features: put points last, such that they appear on top
-      geojsonFeatures.sort((feature0, feature1) => {
-        const priority = featureTypePriority_;
-        return priority(feature1) - priority(feature0);
-      });
-
-      const geojsonFeatureCollection = {
-        type: 'FeatureCollection',
-        features: geojsonFeatures,
-      } as GeoJSONFeatureCollection;
-      return {
-        geoJson: geojsonFeatureCollection,
-        opacity: this.layerState_.opacity,
-        style: mapfishStyleObject,
-        type: 'geojson',
-        name: this.layer_.get('name'),
-      };
+    if (geojsonFeatures.length <= 0) {
+      return null;
     }
-    return null;
+    // And if there are no properties except the version in the style, ignore the layer.
+    if (Object.keys(mapfishStyleObject).length <= 1) {
+      return null;
+    }
+    // Reorder features: put points last, such that they appear on top
+    geojsonFeatures.sort((feature0, feature1) => {
+      const priority = featureTypePriority_;
+      return priority(feature1) - priority(feature0);
+    });
+
+    const geojsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features: geojsonFeatures,
+    } as GeoJSONFeatureCollection;
+    return {
+      geoJson: geojsonFeatureCollection,
+      opacity: this.layerState_.opacity,
+      style: mapfishStyleObject,
+      type: 'geojson',
+      name: this.layer_.get('name'),
+    };
+  }
+
+  /**
+   * Encodes a feature into a GeoJSON feature based and adds it to the array of GeoJSON features.
+   * Complete the mapfishStyleObject with the related styles.
+   */
+  encodeFeature(
+    feature: Feature,
+    resolution: number,
+    geojsonFeatures: GeoJSONFeature[],
+    mapfishStyleObject: MFPVectorStyle,
+  ) {
+    let styleData = null;
+    const styleFunction = feature.getStyleFunction() || this.layer_.getStyleFunction();
+    if (styleFunction) {
+      styleData = styleFunction(feature, resolution) as null | Style | Style[];
+    }
+    if (feature.getGeometry().getType() === 'Circle') {
+      feature = this.featureCircleAsPolygon(feature as Feature<Circle>);
+    }
+    const origGeojsonFeature = this.geojsonFormat.writeFeatureObject(feature);
+
+    let styles = styleData !== null && !Array.isArray(styleData) ? [styleData] : (styleData as Style[]);
+    if (!styles) {
+      return;
+    }
+    styles = styles.filter((style) => !!style);
+    if (styles.length === 0) {
+      return;
+    }
+    console.assert(Array.isArray(styles));
+    let isOriginalFeatureAdded = false;
+    styles.forEach((style) => {
+      // FIXME: the return of the function is very complicate and would require
+      // handling more cases than we actually do
+      let geometry: any = style.getGeometry();
+      let geojsonFeature;
+      if (geometry) {
+        const styledFeature = feature.clone();
+        styledFeature.setGeometry(geometry);
+        geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
+        geojsonFeatures.push(geojsonFeature);
+      } else {
+        geojsonFeature = origGeojsonFeature;
+        geometry = feature.getGeometry();
+        // no need to encode features with no geometry
+        if (!geometry) {
+          return;
+        }
+        if (!this.customizer_.geometryFilter(geometry)) {
+          return;
+        }
+        if (!isOriginalFeatureAdded) {
+          geojsonFeatures.push(geojsonFeature);
+          isOriginalFeatureAdded = true;
+        }
+      }
+
+      const geometryType = geometry.getType();
+      this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
+    });
   }
 
   /**
@@ -263,7 +288,7 @@ export default class VectorEncoder {
    */
   encodeVectorStyle(geometryType: GeometryType, style: Style): MFPSymbolizers | null {
     if (!(geometryType in PrintStyleTypes_)) {
-      // unsupported geometry type
+      console.warn('Unsupported geometry type: ', geometryType);
       return null;
     }
     const styleType = PrintStyleTypes_[geometryType];
@@ -524,5 +549,16 @@ export default class VectorEncoder {
       }
       symbolizers.push(symbolizer);
     }
+  }
+
+  /**
+   * Converts a circle feature to a N sides polygon feature.
+   * Sides are defined in Constants.CIRCLE_TO_POLYGON_SIDES.
+   */
+  protected featureCircleAsPolygon(feature: Feature<Circle>) {
+    return new Feature({
+      ...feature.getProperties(),
+      geometry: fromCircle(feature.getGeometry(), Constants.CIRCLE_TO_POLYGON_SIDES),
+    });
   }
 }

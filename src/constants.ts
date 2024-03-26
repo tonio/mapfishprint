@@ -5,6 +5,8 @@ export const Constants = {
   DOTS_PER_INCH: 72,
   /** According to the "international yard" definition 1 inch is defined as exactly 2.54 cm. */
   METERS_PER_INCH: 0.0254,
+  /** Vector circles are rendered as polygon of N sides. */
+  CIRCLE_TO_POLYGON_SIDES: 64,
 };
 
 export const CalculatedConstants = {

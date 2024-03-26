@@ -14,7 +14,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import {Circle, Fill, Stroke, Style, Text} from 'ol/style.js';
 import Feature from './ol/Feature.js';
-import {Polygon, LineString, Point} from 'ol/geom.js';
+import {Polygon, LineString, Point, Circle as CircleGeom} from 'ol/geom.js';
 import {getPrintExtent} from './lib/utils.js';
 import ImageLayer from 'ol/layer/Image.js';
 
@@ -60,6 +60,10 @@ const features = [
         [796612, 5837460],
       ],
     ]),
+  }),
+  new Feature({
+    name: 'A Circle',
+    geometry: new CircleGeom([796932, 5836860], 75),
   }),
   new Feature({
     name: 'A line',
