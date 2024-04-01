@@ -71,7 +71,7 @@ export function getWmtsMatrices(source: WMTS): MFPWmtsMatrix[] {
       scaleDenominator: resolutionMeters / Constants.WMTS_PIXEL_SIZE,
       tileSize: toSize(tileGrid.getTileSize(i)),
       topLeftCorner: tileGrid.getOrigin(i),
-      matrixSize: [tileRange.maxX - tileRange.minX, tileRange.maxY - tileRange.minY],
+      matrixSize: [tileRange.maxX - tileRange.minX + 1, tileRange.maxY - tileRange.minY + 1],
     } as MFPWmtsMatrix);
   }
 
