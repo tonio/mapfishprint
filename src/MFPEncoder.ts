@@ -182,18 +182,23 @@ export default class MFPBaseEncoder {
    */
   encodeWmsLayerState(layerState: State, url: string, params: any, customizer: BaseCustomizer): MFPWmsLayer {
     const layer = layerState.layer;
+    // Pass all WMS params, but not the one standard one that are handled by mapfishprint
+    const customParams: any = {...params};
+    ['SERVICE', 'REQUEST', 'FORMAT', 'LAYERS', 'VERSION', 'STYLES'].forEach(
+      (p: string) => delete customParams[p],
+    );
     return {
       name: layer.get('name'),
       baseURL: url,
       imageFormat: params.FORMAT,
       layers: params.LAYERS.split(','),
-      customParams: {},
+      customParams,
       serverType: 'mapserver',
       type: 'wms',
       opacity: layer.getOpacity(),
       version: params.VERSION,
       useNativeAngle: true,
-      styles: [''],
+      styles: params.STYLES?.split(',') ?? [''],
     };
   }
 
@@ -235,7 +240,9 @@ export default class MFPBaseEncoder {
     console.assert(source instanceof TileWMSSource);
     const urls = source.getUrls();
     console.assert(!!urls);
-    return this.encodeWmsLayerState(layerState, urls[0], source.getParams(), customizer);
+    const wmsLayer = this.encodeWmsLayerState(layerState, urls[0], source.getParams(), customizer);
+    customizer.wmsLayer(layerState, wmsLayer, source);
+    return wmsLayer;
   }
 
   /**

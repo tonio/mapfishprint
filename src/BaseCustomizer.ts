@@ -1,8 +1,8 @@
 import type {Geometry} from 'ol/geom.js';
 import type {State} from 'ol/layer/Layer.js';
-import type {WMTS} from 'ol/source.js';
+import type {WMTS, TileWMS} from 'ol/source.js';
 import type {Image, Stroke} from 'ol/style.js';
-import type {MFPSymbolizerLine, MFPSymbolizerPoint, MFPWmtsLayer} from './types';
+import type {MFPWmsLayer, MFPSymbolizerLine, MFPSymbolizerPoint, MFPWmtsLayer} from './types';
 import type {Feature as GeoJSONFeature} from 'geojson';
 
 /**
@@ -80,4 +80,12 @@ export default class BaseCustomizer {
   wmtsLayer(layerState: State, wmtsLayer: MFPWmtsLayer, source: WMTS) {}
   // FIXME: does it really makes sense?
   // Why isn't it done on an extended BaseEncoder instead?
+
+  /**
+   * Can be used to manipulate a converted WMS layer
+   * @param layerState
+   * @param wmsLayer
+   * @param source
+   */
+  wmsLayer(layerState: State, wmsLayer: MFPWmsLayer, source: TileWMS) {}
 }
