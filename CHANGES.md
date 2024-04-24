@@ -1,5 +1,9 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.12
+
+- Allow to customize WMS
+
 ## 0.2.6
 
 - Make it compatible with OpenLayers 9;
