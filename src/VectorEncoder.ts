@@ -547,6 +547,7 @@ export default class VectorEncoder {
           symbolizer.haloRadius = strokeWidth;
         }
       }
+      this.customizer_.text(this.layerState_, symbolizer, textStyle);
       symbolizers.push(symbolizer);
     }
   }
