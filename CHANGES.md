@@ -1,8 +1,12 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.13
+
+- Allow to customize vector text.
+
 ## 0.2.12
 
-- Allow to customize WMS
+- Allow to customize WMS.
 
 ## 0.2.6
 
