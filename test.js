@@ -79,7 +79,7 @@ const styleFn = (feature) => {
     text: new Text({
       text: feature.get('name'),
       font: '12px sans-serif',
-      offsetY: 12,
+      offsetY: -12,
     }),
     image: new Circle({
       fill,

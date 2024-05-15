@@ -523,7 +523,8 @@ export default class VectorEncoder {
         label: textStyle.getText(),
         fontFamily: textStyle.getFont() ? textStyle.getFont() : 'sans-serif',
         labelXOffset: textStyle.getOffsetX(),
-        labelYOffset: textStyle.getOffsetY(),
+        // OL and MFP behaves differently on the Y offset
+        labelYOffset: -textStyle.getOffsetY(),
         labelAlign: 'cm',
       } as MFPSymbolizerText;
       const fillStyle = textStyle.getFill();
