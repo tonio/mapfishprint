@@ -1,5 +1,9 @@
 # @geoblocks/geoblocks changes
 
+## 0.2.14
+
+- Fix (invert) text Y axis offset.
+
 ## 0.2.13
 
 - Allow to customize vector text.
