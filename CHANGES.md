@@ -5,6 +5,10 @@
 - Use ol getFontParameters to parse font.
 - Fallback to fill color if none is specified on circle style.
 
+Breaking changes:
+
+- Pass feature object to allow informed customization.
+
 
 ## 0.2.14
 

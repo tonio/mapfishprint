@@ -1,7 +1,7 @@
 import {rgbArrayToHex} from './utils';
 import {GeoJSON as olFormatGeoJSON} from 'ol/format.js';
-import type {Fill, Icon, Image, Stroke, Style, Text} from 'ol/style.js';
-import {Circle as olStyleCircle, Icon as olStyleIcon} from 'ol/style.js';
+import type {Fill, Icon, Image, Style, Text} from 'ol/style.js';
+import {Circle as olStyleCircle, Icon as olStyleIcon, Stroke} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import type Circle from 'ol/geom/Circle.js';
 import {getUid} from 'ol';
@@ -26,6 +26,7 @@ import {fromCircle} from 'ol/geom/Polygon.js';
 import {Constants} from './constants';
 
 import {getFontParameters} from 'ol/css.js';
+import {type ColorLike} from 'ol/colorlike';
 
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
@@ -34,21 +35,22 @@ export const PrintStyleType = {
   POLYGON: 'Polygon',
 } as const;
 
-/** Supported geometry types */
-type GeometryType = 'LineString' | 'Point' | 'Polygon' | 'MultiLineString' | 'MultiPolygon';
-
 /**
  * Link between supported geometry and print style types.
  * Circles will be handled as polygon.
  * */
-export const PrintStyleTypes_ = {
+export const PrintStyleTypes = Object.freeze({
   LineString: PrintStyleType.LINE_STRING,
   Point: PrintStyleType.POINT,
   Polygon: PrintStyleType.POLYGON,
   MultiLineString: PrintStyleType.LINE_STRING,
   MultiPoint: PrintStyleType.POINT,
   MultiPolygon: PrintStyleType.POLYGON,
-} as const;
+});
+
+function isSupportedGeometryType(geometryType: string): geometryType is keyof typeof PrintStyleTypes {
+  return geometryType in PrintStyleTypes;
+}
 
 /** Key prefix to feature style prop */
 const FEATURE_STYLE_PROP = '_mfp_style';
@@ -203,8 +205,7 @@ export default class VectorEncoder {
         }
       }
 
-      const geometryType = geometry.getType();
-      this.addVectorStyle(mapfishStyleObject, geojsonFeature, geometryType, style);
+      this.addVectorStyle(mapfishStyleObject, geojsonFeature, style);
     });
   }
 
@@ -238,12 +239,7 @@ export default class VectorEncoder {
   /**
    * Adds a vector style to the mapfishStyleObject based on the given parameters.
    */
-  addVectorStyle(
-    mapfishStyleObject: MFPVectorStyle,
-    geojsonFeature: GeoJSONFeature,
-    geometryType: GeometryType,
-    style: Style,
-  ) {
+  addVectorStyle(mapfishStyleObject: MFPVectorStyle, geojsonFeature: GeoJSONFeature, style: Style) {
     const styleId = this.getDeepStyleUid(style);
     const key = styleKey(styleId);
     let hasSymbolizer;
@@ -251,7 +247,7 @@ export default class VectorEncoder {
       // do nothing if we already have a style object for this CQL rule
       hasSymbolizer = true;
     } else {
-      const styleObject = this.encodeVectorStyle(geometryType, style);
+      const styleObject = this.encodeVectorStyle(geojsonFeature, style);
       hasSymbolizer = styleObject && styleObject.symbolizers.length !== 0;
       if (hasSymbolizer) {
         // @ts-ignore
@@ -288,12 +284,13 @@ export default class VectorEncoder {
    * Encodes the vector style based on the geometry type and style.
    * @returns The encoded vector style, or null if the geometry type is unsupported.
    */
-  encodeVectorStyle(geometryType: GeometryType, style: Style): MFPSymbolizers | null {
-    if (!(geometryType in PrintStyleTypes_)) {
+  encodeVectorStyle(geojsonFeature: GeoJSONFeature, style: Style): MFPSymbolizers | null {
+    const geometryType = geojsonFeature.geometry.type;
+    if (!isSupportedGeometryType(geometryType)) {
       console.warn('Unsupported geometry type: ', geometryType);
       return null;
     }
-    const styleType = PrintStyleTypes_[geometryType];
+    const styleType = PrintStyleTypes[geometryType];
     const styleObject = {
       symbolizers: [],
     } as MFPSymbolizers;
@@ -303,19 +300,19 @@ export default class VectorEncoder {
     const textStyle = style.getText();
     if (styleType === PrintStyleType.POLYGON) {
       if (fillStyle !== null) {
-        this.encodeVectorStylePolygon(styleObject.symbolizers, fillStyle, strokeStyle);
+        this.encodeVectorStylePolygon(geojsonFeature, styleObject.symbolizers, fillStyle, strokeStyle);
       }
     } else if (styleType === PrintStyleType.LINE_STRING) {
       if (strokeStyle !== null) {
-        this.encodeVectorStyleLine(styleObject.symbolizers, strokeStyle);
+        this.encodeVectorStyleLine(geojsonFeature, styleObject.symbolizers, strokeStyle);
       }
     } else if (styleType === PrintStyleType.POINT) {
       if (imageStyle !== null) {
-        this.encodeVectorStylePoint(styleObject.symbolizers, imageStyle);
+        this.encodeVectorStylePoint(geojsonFeature, styleObject.symbolizers, imageStyle);
       }
     }
     if (textStyle !== null) {
-      this.encodeVectorStyleText(styleObject.symbolizers, textStyle);
+      this.encodeVectorStyleText(geojsonFeature, styleObject.symbolizers, textStyle);
     }
     return styleObject;
   }
@@ -324,6 +321,7 @@ export default class VectorEncoder {
    * Encodes the vector style fill for a symbolizer.
    */
   protected encodeVectorStyleFill(
+    geojsonFeature: GeoJSONFeature,
     symbolizer: MFPSymbolizerPoint | MFPSymbolizerPolygon | MFPSymbolizerText,
     fillStyle: Fill,
   ) {
@@ -342,27 +340,35 @@ export default class VectorEncoder {
   /**
    * Encodes the vector style for a line symbolizer, using the given stroke style.
    */
-  protected encodeVectorStyleLine(symbolizers: MFPSymbolizer[], strokeStyle: Stroke) {
+  protected encodeVectorStyleLine(
+    geojsonFeature: GeoJSONFeature,
+    symbolizers: MFPSymbolizer[],
+    strokeStyle: Stroke,
+  ) {
     const symbolizer = {
       type: 'line',
     } as MFPSymbolizerLine;
-    this.encodeVectorStyleStroke(symbolizer, strokeStyle);
-    this.customizer_.line(this.layerState_, symbolizer, strokeStyle);
+    this.encodeVectorStyleStroke(geojsonFeature, symbolizer, strokeStyle);
+    this.customizer_.line(this.layerState_, geojsonFeature, symbolizer, strokeStyle);
     symbolizers.push(symbolizer);
   }
 
   /**
    * Encodes a vector style point.
    */
-  protected encodeVectorStylePoint(symbolizers: MFPSymbolizer[], imageStyle: Image) {
+  protected encodeVectorStylePoint(
+    geojsonFeature: GeoJSONFeature,
+    symbolizers: MFPSymbolizer[],
+    imageStyle: Image,
+  ) {
     let symbolizer: MFPSymbolizerPoint | undefined;
     if (imageStyle instanceof olStyleCircle) {
-      symbolizer = this.encodeVectorStylePointStyleCircle(imageStyle);
+      symbolizer = this.encodeVectorStylePointStyleCircle(geojsonFeature, imageStyle);
     } else if (imageStyle instanceof olStyleIcon) {
-      symbolizer = this.encodeVectorStylePointStyleIcon(imageStyle);
+      symbolizer = this.encodeVectorStylePointStyleIcon(geojsonFeature, imageStyle);
     }
     if (symbolizer) {
-      this.customizer_.point(this.layerState_, symbolizer, imageStyle);
+      this.customizer_.point(this.layerState_, geojsonFeature, symbolizer, imageStyle);
       symbolizers.push(symbolizer);
     }
   }
@@ -371,7 +377,10 @@ export default class VectorEncoder {
    * Encodes the vector style point style circle.
    * @returns The encoded symbolizer point.
    */
-  protected encodeVectorStylePointStyleCircle(imageStyle: olStyleCircle): MFPSymbolizerPoint {
+  protected encodeVectorStylePointStyleCircle(
+    geojsonFeature: GeoJSONFeature,
+    imageStyle: olStyleCircle,
+  ): MFPSymbolizerPoint {
     const symbolizer = {
       type: 'point',
     } as MFPSymbolizerPoint;
@@ -386,8 +395,9 @@ export default class VectorEncoder {
     }
     const fillStyle = imageStyle.getFill();
     let strokeStyle = imageStyle.getStroke();
+
     if (fillStyle !== null) {
-      this.encodeVectorStyleFill(symbolizer, fillStyle);
+      this.encodeVectorStyleFill(geojsonFeature, symbolizer, fillStyle);
       if (!strokeStyle) {
         // Without a stroke style a black border would appear around the circle
         strokeStyle = new Stroke({
@@ -395,8 +405,9 @@ export default class VectorEncoder {
         });
       }
     }
+
     if (strokeStyle !== null) {
-      this.encodeVectorStyleStroke(symbolizer, strokeStyle);
+      this.encodeVectorStyleStroke(geojsonFeature, symbolizer, strokeStyle);
     }
     return symbolizer;
   }
@@ -405,7 +416,10 @@ export default class VectorEncoder {
    * Encodes a Vector Style point style icon.
    * @returns The encoded symbolizer point style or undefined if imageStyle src is undefined.
    */
-  protected encodeVectorStylePointStyleIcon(imageStyle: olStyleIcon): MFPSymbolizerPoint | undefined {
+  protected encodeVectorStylePointStyleIcon(
+    geojsonFeature: GeoJSONFeature,
+    imageStyle: olStyleIcon,
+  ): MFPSymbolizerPoint | undefined {
     const src = imageStyle.getSrc();
     if (src === undefined) {
       return undefined;
@@ -474,13 +488,18 @@ export default class VectorEncoder {
   /**
    * Encodes the vector style of a polygon by applying fill and stroke styles.
    */
-  protected encodeVectorStylePolygon(symbolizers: MFPSymbolizer[], fillStyle: Fill, strokeStyle: Stroke) {
+  protected encodeVectorStylePolygon(
+    geojsonFeature: GeoJSONFeature,
+    symbolizers: MFPSymbolizer[],
+    fillStyle: Fill,
+    strokeStyle: Stroke,
+  ) {
     const symbolizer = {
       type: 'polygon',
     } as MFPSymbolizerPolygon;
-    this.encodeVectorStyleFill(symbolizer, fillStyle);
+    this.encodeVectorStyleFill(geojsonFeature, symbolizer, fillStyle);
     if (strokeStyle !== null) {
-      this.encodeVectorStyleStroke(symbolizer, strokeStyle);
+      this.encodeVectorStyleStroke(geojsonFeature, symbolizer, strokeStyle);
     }
     symbolizers.push(symbolizer);
   }
@@ -489,6 +508,7 @@ export default class VectorEncoder {
    * Encodes the vector style stroke properties.
    */
   protected encodeVectorStyleStroke(
+    geojsonFeature: GeoJSONFeature,
     symbolizer: MFPSymbolizerPoint | MFPSymbolizerLine | MFPSymbolizerPolygon,
     strokeStyle: Stroke,
   ) {
@@ -523,7 +543,11 @@ export default class VectorEncoder {
   /**
    * Encodes vector style text.
    */
-  protected encodeVectorStyleText(symbolizers: MFPSymbolizer[], textStyle: Text) {
+  protected encodeVectorStyleText(
+    geojsonFeature: GeoJSONFeature,
+    symbolizers: MFPSymbolizer[],
+    textStyle: Text,
+  ) {
     const label = textStyle.getText();
     if (label) {
       const fp = getFontParameters(textStyle.getFont() || 'sans-serif');
@@ -542,7 +566,7 @@ export default class VectorEncoder {
       } as MFPSymbolizerText;
       const fillStyle = textStyle.getFill();
       if (fillStyle !== null) {
-        this.encodeVectorStyleFill(symbolizer, fillStyle);
+        this.encodeVectorStyleFill(geojsonFeature, symbolizer, fillStyle);
         symbolizer.fontColor = symbolizer.fillColor;
       }
       const strokeStyle = textStyle.getStroke();
@@ -561,7 +585,7 @@ export default class VectorEncoder {
           symbolizer.haloRadius = strokeWidth;
         }
       }
-      this.customizer_.text(this.layerState_, symbolizer, textStyle);
+      this.customizer_.text(this.layerState_, geojsonFeature, symbolizer, textStyle);
       symbolizers.push(symbolizer);
     }
   }
