@@ -385,10 +385,16 @@ export default class VectorEncoder {
       }
     }
     const fillStyle = imageStyle.getFill();
+    let strokeStyle = imageStyle.getStroke();
     if (fillStyle !== null) {
       this.encodeVectorStyleFill(symbolizer, fillStyle);
+      if (!strokeStyle) {
+        // Without a stroke style a black border would appear around the circle
+        strokeStyle = new Stroke({
+          color: fillStyle.getColor() as ColorLike,
+        });
+      }
     }
-    const strokeStyle = imageStyle.getStroke();
     if (strokeStyle !== null) {
       this.encodeVectorStyleStroke(symbolizer, strokeStyle);
     }

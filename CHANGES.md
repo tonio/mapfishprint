@@ -3,6 +3,8 @@
 ## 0.2.15
 
 - Use ol getFontParameters to parse font.
+- Fallback to fill color if none is specified on circle style.
+
 
 ## 0.2.14
 
