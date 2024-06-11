@@ -25,6 +25,8 @@ import type {Feature as GeoJSONFeature, FeatureCollection as GeoJSONFeatureColle
 import {fromCircle} from 'ol/geom/Polygon.js';
 import {Constants} from './constants';
 
+import {getFontParameters} from 'ol/css.js';
+
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
   LINE_STRING: 'LineString',
@@ -518,10 +520,15 @@ export default class VectorEncoder {
   protected encodeVectorStyleText(symbolizers: MFPSymbolizer[], textStyle: Text) {
     const label = textStyle.getText();
     if (label) {
+      const fp = getFontParameters(textStyle.getFont() || 'sans-serif');
       const symbolizer = {
         type: 'text',
         label: textStyle.getText(),
-        fontFamily: textStyle.getFont() ? textStyle.getFont() : 'sans-serif',
+        fontFamily: fp.family,
+        fontSize: fp.size,
+        fontStyle: fp.style,
+        fontWeight: fp.weight,
+        // FIXME: missing fontVariant, is it supported in MFP?
         labelXOffset: textStyle.getOffsetX(),
         // OL and MFP behaves differently on the Y offset
         labelYOffset: -textStyle.getOffsetY(),
