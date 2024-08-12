@@ -27,6 +27,7 @@ import {Constants} from './constants';
 
 import {getFontParameters} from 'ol/css.js';
 import {type ColorLike} from 'ol/colorlike';
+import { Geometry } from 'ol/geom';
 
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
@@ -85,7 +86,8 @@ const styleKey = (styles: string | string[]): string => {
  */
 export default class VectorEncoder {
   private layerState_: State;
-  private layer_: VectorLayer<VectorSource<Feature>>;
+  // VectorSource<Feature> for OL 10.0.0, any to support OL < 10
+  private layer_: VectorLayer<any>;
   private customizer_: BaseCustomizer;
   private geojsonFormat = new olFormatGeoJSON();
   private deepIds_: Map<string, number> = new Map();
@@ -93,7 +95,8 @@ export default class VectorEncoder {
 
   constructor(layerState: State, customizer: BaseCustomizer) {
     this.layerState_ = layerState;
-    this.layer_ = this.layerState_.layer as VectorLayer<VectorSource<Feature>>;
+    // VectorSource<Feature> for OL 10.0.0, any to support OL < 10
+    this.layer_ = this.layerState_.layer as VectorLayer<any>;
     this.customizer_ = customizer;
   }
 
@@ -115,7 +118,7 @@ export default class VectorEncoder {
       version: 2,
     };
 
-    features.forEach((feature) =>
+    features.forEach((feature: Feature<Geometry>) =>
       this.encodeFeature(feature, resolution, geojsonFeatures, mapfishStyleObject),
     );
 
