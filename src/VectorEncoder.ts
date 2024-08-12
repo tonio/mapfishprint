@@ -27,7 +27,7 @@ import {Constants} from './constants';
 
 import {getFontParameters} from 'ol/css.js';
 import {type ColorLike} from 'ol/colorlike';
-import { Geometry } from 'ol/geom';
+import {Geometry} from 'ol/geom';
 
 /** Represents the different types of printing styles. */
 export const PrintStyleType = {
