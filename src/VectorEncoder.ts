@@ -85,7 +85,7 @@ const styleKey = (styles: string | string[]): string => {
  */
 export default class VectorEncoder {
   private layerState_: State;
-  private layer_: VectorLayer<Feature>;
+  private layer_: VectorLayer<VectorSource<Feature>>;
   private customizer_: BaseCustomizer;
   private geojsonFormat = new olFormatGeoJSON();
   private deepIds_: Map<string, number> = new Map();
@@ -93,7 +93,7 @@ export default class VectorEncoder {
 
   constructor(layerState: State, customizer: BaseCustomizer) {
     this.layerState_ = layerState;
-    this.layer_ = this.layerState_.layer as VectorLayer<Feature>;
+    this.layer_ = this.layerState_.layer as VectorLayer<VectorSource<Feature>>;
     this.customizer_ = customizer;
   }
 
