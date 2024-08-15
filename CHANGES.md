@@ -4,6 +4,7 @@
 
 - Make it compatible with OpenLayers 10.
 - Update @geoblocks/print.
+- Add replacer to requestReport to support custom replacer for print specification manipulation
 
 ## 0.2.15
 
