@@ -113,13 +113,17 @@ export async function cancelPrint(mfpBaseUrl: string, ref: string): Promise<MFPC
   return {status: response.status};
 }
 
-export async function requestReport(mfpBaseUrl: string, spec: MFPSpec): Promise<MFPReportResponse> {
+export async function requestReport(
+  mfpBaseUrl: string,
+  spec: MFPSpec,
+  replacer?: (key: string, value: any) => any | (string | number)[],
+): Promise<MFPReportResponse> {
   const report = await fetch(`${mfpBaseUrl}/report.${spec.format}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(spec),
+    body: JSON.stringify(spec, replacer),
   });
   return await report.json();
 }
