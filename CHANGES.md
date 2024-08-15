@@ -1,4 +1,10 @@
-# @geoblocks/geoblocks changes
+# @geoblocks/mapfisprint changes
+
+## 0.2.16
+
+- Make it compatible with OpenLayers 10.
+- Update @geoblocks/print.
+- Add replacer to requestReport to support custom replacer for print specification manipulation
 
 ## 0.2.15
 
@@ -8,7 +14,6 @@
 Breaking changes:
 
 - Pass feature object to allow informed customization.
-
 
 ## 0.2.14
 
@@ -33,11 +38,13 @@ Breaking changes:
 - Fix not printed text on lines and polygons.
 
 ## 0.2.4
+
 - Add a cancel function.
 - Move createReport to utils.
 - Add **raw** encode support for WMS and Tile WMS layers.
 
 ## 0.2.3
+
 - Add utility functions.
 - In `BaseCustomizer`, the printExtent can be now set and get/set are dedicated methods.
 - `pdfA` (allow transparency) is now a spec.map optional param.
@@ -46,11 +53,14 @@ Breaking changes:
 - Add a timeout and manage errors on the `getDownloadUrl` utils function.
 
 ## v0.2.2
+
 - Add optional MVTEncoder
 
 ## v0.2.0
+
 - General refactor (rename classes / types)
 
 ## v0.1.2
+
 - Add inline source maps.
 - Publish a transpiled ES6 library + types.
