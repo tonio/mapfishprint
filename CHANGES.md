@@ -2,7 +2,7 @@
 
 ## 0.2.16
 
-- Make it compatible with OpenLayers 100.
+- Make it compatible with OpenLayers 10.
 - Update @geoblocks/print.
 
 ## 0.2.15
