@@ -187,9 +187,17 @@ export default class VectorEncoder {
       // handling more cases than we actually do
       let geometry: any = style.getGeometry();
       let geojsonFeature;
-      if (geometry) {
+      // In some cases, the geometries are objects, in other cases they're features.
+      // We need to make sure that either the geometry is an object, or that the feature it contains returns
+      // a non-null / non-undefined value.
+      if (geometry && ((geometry instanceof Object && typeof geometry === 'object') || geometry(feature))) {
         const styledFeature = feature.clone();
-        styledFeature.setGeometry(geometry);
+        if (geometry instanceof Object && typeof geometry === 'object') {
+          styledFeature.setGeometry(geometry);
+        }
+        else {
+          styledFeature.setGeometry(geometry(feature));
+        }
         geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
         geojsonFeatures.push(geojsonFeature);
       } else {
