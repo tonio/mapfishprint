@@ -190,7 +190,7 @@ export default class VectorEncoder {
       // In some cases, the geometries are objects, in other cases they're features.
       // We need to make sure that either the geometry is an object, or that the feature it contains returns
       // a non-null / non-undefined value.
-      if (geometry && ((geometry instanceof Object && typeof geometry === 'object') || geometry(feature))) {
+      if (geometry && ((typeof geometry === 'object' && geometry instanceof Object) || (typeof geometry === 'function' && geometry(feature))) {
         const styledFeature = feature.clone();
         if (geometry instanceof Object && typeof geometry === 'object') {
           styledFeature.setGeometry(geometry);
