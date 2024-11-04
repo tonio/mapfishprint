@@ -187,26 +187,31 @@ export default class VectorEncoder {
       // handling more cases than we actually do
       let geometry: any = style.getGeometry();
       let geojsonFeature;
-      if (geometry) {
-        const styledFeature = feature.clone();
-        styledFeature.setGeometry(geometry);
-        geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
-        geojsonFeatures.push(geojsonFeature);
-      } else {
-        geojsonFeature = origGeojsonFeature;
-        geometry = feature.getGeometry();
-        // no need to encode features with no geometry
-        if (!geometry) {
-          return;
+      // In some cases, the geometries are objects, in other cases they're functions.
+      // we need to ensure we're handling functions, wether they return an object or not.
+      if (typeof geometry === 'function') {
+          geometry = geometry(feature);
         }
-        if (!this.customizer_.geometryFilter(geometry)) {
-          return;
-        }
-        if (!isOriginalFeatureAdded) {
+        if (typeof geometry === 'object') {
+          const styledFeature = feature.clone();
+          styledFeature.setGeometry(geometry);
+          geojsonFeature = this.geojsonFormat.writeFeatureObject(styledFeature);
           geojsonFeatures.push(geojsonFeature);
-          isOriginalFeatureAdded = true;
+        } else {
+          geojsonFeature = origGeojsonFeature;
+          geometry = feature.getGeometry();
+          // no need to encode features with no geometry
+          if (!geometry) {
+            return;
+          }
+          if (!this.customizer_.geometryFilter(geometry)) {
+            return;
+          }
+          if (!isOriginalFeatureAdded) {
+            geojsonFeatures.push(geojsonFeature);
+            isOriginalFeatureAdded = true;
+          }
         }
-      }
 
       this.addVectorStyle(mapfishStyleObject, geojsonFeature, style);
     });
