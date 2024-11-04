@@ -1,5 +1,9 @@
 # @geoblocks/mapfisprint changes
 
+## 0.2.17
+
+- Evaluate geometry functions.
+
 ## 0.2.16
 
 - Make it compatible with OpenLayers 10.
